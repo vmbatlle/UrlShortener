@@ -11,6 +11,7 @@ public class Click {
     private String browser;
     private String platform;
     private String ip;
+    private String device;
     private String country;
 
     public Click(Long id, String hash, Date created, String referrer,
@@ -22,6 +23,7 @@ public class Click {
         this.browser = browser;
         this.platform = platform;
         this.ip = ip;
+        //this.device = device;
         this.country = country;
     }
 
@@ -43,6 +45,10 @@ public class Click {
 
     public String getBrowser() {
         return browser;
+    }
+    
+    public String getDevice() {
+        return device;
     }
 
     public String getPlatform() {
