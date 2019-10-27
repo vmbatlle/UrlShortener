@@ -1,5 +1,7 @@
 package urlshortener.service;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -39,10 +41,28 @@ public class ClickService {
         long lim = 100;
         long off = 0;
         List<Click> lc = clickRepository.list(lim, off);
-        /*for (Click click : lc) {
-            System.out.println("Browser: " + click.getBrowser() + " Country: " + click.getCountry() + " IP: " + click.getIp());
-        }*/
-        return lc.toString();
+        
+        JSONObject json = new JSONObject();
+        try{
+            JSONArray array = new JSONArray();
+            JSONObject item = new JSONObject();
+            
+            for (Click click : lc) {
+                item.put("URI", ("http://.../"+click.getHash()));
+                item.put("Browser", click.getBrowser());
+                item.put("OS", click.getPlatform());
+                item.put("IP", click.getIp());
+                item.put("Date", click.getCreated().toGMTString());
+                array.put(item);
+                item = new JSONObject();
+            }
+            json.put("clicks", array);
+            return json.toString(4);
+        }catch(Exception e){
+            e.printStackTrace();
+            return json.toString();
+        }
+        
     }
 
 }

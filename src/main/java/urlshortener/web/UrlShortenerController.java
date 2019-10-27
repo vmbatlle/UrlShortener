@@ -120,12 +120,11 @@ public class UrlShortenerController {
             JSONObject myResponse;
             List<String> data = new ArrayList<>();
             myResponse = new JSONObject(response.toString());
-            data.add(myResponse.getString("os.name"));
-            data.add(myResponse.getString("device.type"));
-            data.add(myResponse.getString("browser.name"));
+            data.add(myResponse.getJSONObject("os").getString("name"));
+            data.add(myResponse.getJSONObject("device").getString("type"));
+            data.add(myResponse.getJSONObject("browser").getString("name"));
             return data;
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             return null;
         }
