@@ -10,7 +10,12 @@ import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
@@ -30,6 +35,22 @@ public class UrlShortenerController {
     public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService) {
         this.shortUrlService = shortUrlService;
         this.clickService = clickService;
+    }
+
+    private boolean isAccesible(String url_s) {
+        int responseCode = 400;
+        try {
+            URL url = new URL(url_s);
+            HttpURLConnection huc = (HttpURLConnection) url.openConnection();
+            huc.setRequestMethod("HEAD");
+            responseCode = huc.getResponseCode();
+        } catch (MalformedURLException e1) {
+            //e1.printStackTrace();
+        } catch (IOException e) {
+            //e.printStackTrace();
+        }
+
+        return responseCode == HttpURLConnection.HTTP_OK;
     }
 
     @RequestMapping(value = "/{id:(?!link|index).*}", method = RequestMethod.GET)
@@ -52,8 +73,27 @@ public class UrlShortenerController {
                                               HttpServletRequest request) {
         UrlValidator urlValidator = new UrlValidator(new String[]{"http",
                 "https"});
-        if (urlValidator.isValid(url)) {
+        if (urlValidator.isValid(url) && isAccesible(url)) {
             ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());
+            HttpHeaders h = new HttpHeaders();
+            h.setLocation(su.getUri());
+            return new ResponseEntity<>(su, h, HttpStatus.CREATED);
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    //Custom URL request
+    @RequestMapping(value = "/link_custom", method = RequestMethod.POST)
+    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_POST_LIMIT, timeUnit = TimeUnit.MINUTES)
+    public ResponseEntity<ShortURL> shortener(@RequestParam("url") String url,
+                                              @RequestParam(value = "sponsor", required = false) String sponsor,
+                                              @RequestParam("custom_url") String c_url,
+                                              HttpServletRequest request) {
+        UrlValidator urlValidator = new UrlValidator(new String[]{"http",
+                "https"});
+        if (urlValidator.isValid(url) && isAccesible(url)) {
+            ShortURL su = shortUrlService.save(url, c_url, sponsor, request.getRemoteAddr());
             HttpHeaders h = new HttpHeaders();
             h.setLocation(su.getUri());
             return new ResponseEntity<>(su, h, HttpStatus.CREATED);

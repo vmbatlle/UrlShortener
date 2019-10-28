@@ -62,7 +62,7 @@ public class UrlShortenerTests2 {
     @MockBean
     private ShortURLService shortUrlService;
 
-    @Value("${throttling.tests.run:0}")
+    @Value("${throttling.tests.run:1}")
     private boolean runThrottlingTests;
 
     @Before

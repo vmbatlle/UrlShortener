@@ -48,6 +48,11 @@ public class ShortURLBuilder {
         return this;
     }
 
+    ShortURLBuilder custom_uri(String c_uri) {
+        hash = c_uri;
+        return this;
+    }
+
     ShortURLBuilder sponsor(String sponsor) {
         this.sponsor = sponsor;
         return this;

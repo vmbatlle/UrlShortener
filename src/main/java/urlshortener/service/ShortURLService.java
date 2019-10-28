@@ -35,4 +35,20 @@ public class ShortURLService {
                 .build();
         return shortURLRepository.save(su);
     }
+
+    public ShortURL save(String url, String c_url, String sponsor, String ip) {
+        ShortURL su = ShortURLBuilder.newInstance()
+                .target(url)
+                .custom_uri(c_url)
+                .uri((String hash) -> linkTo(methodOn(UrlShortenerController.class).redirectTo(hash, null)).toUri())
+                .sponsor(sponsor)
+                .createdNow()
+                .randomOwner()
+                .temporaryRedirect()
+                .treatAsSafe()
+                .ip(ip)
+                .unknownCountry()
+                .build();
+        return shortURLRepository.save(su);
+    }
 }
