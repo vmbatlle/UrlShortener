@@ -21,3 +21,4 @@ bin/
 db/
 .settings/
 .project
+.vscode/

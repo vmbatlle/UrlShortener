@@ -48,13 +48,12 @@ public class ShortURLBuilder {
         return this;
     }
 
-    ShortURLBuilder custom_uri(String c_uri) {
-        hash = c_uri;
-        return this;
-    }
-
     ShortURLBuilder sponsor(String sponsor) {
         this.sponsor = sponsor;
+        //Check sponsor
+        if (sponsor != null && !sponsor.isEmpty()) {
+            this.hash = sponsor;
+        }
         return this;
     }
 
@@ -89,7 +88,8 @@ public class ShortURLBuilder {
     }
 
     ShortURLBuilder uri(Function<String, URI> extractor) {
-        this.uri = extractor.apply(hash);
+        this.uri = this.sponsor != null ? extractor.apply(sponsor) : extractor.apply(hash);
+        System.out.println("URI: " + this.uri);
         return this;
     }
 }

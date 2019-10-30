@@ -22,10 +22,11 @@ public class ShortURLService {
     }
 
     public ShortURL save(String url, String sponsor, String ip) {
+        if (sponsor != null) { System.out.println("SPONSOR: " + sponsor);}
         ShortURL su = ShortURLBuilder.newInstance()
                 .target(url)
-                .uri((String hash) -> linkTo(methodOn(UrlShortenerController.class).redirectTo(hash, null)).toUri())
                 .sponsor(sponsor)
+                .uri((String hash) -> linkTo(methodOn(UrlShortenerController.class).redirectTo(hash, null)).toUri())
                 .createdNow()
                 .randomOwner()
                 .temporaryRedirect()
@@ -33,22 +34,7 @@ public class ShortURLService {
                 .ip(ip)
                 .unknownCountry()
                 .build();
-        return shortURLRepository.save(su);
-    }
-
-    public ShortURL save(String url, String c_url, String sponsor, String ip) {
-        ShortURL su = ShortURLBuilder.newInstance()
-                .target(url)
-                .custom_uri(c_url)
-                .uri((String hash) -> linkTo(methodOn(UrlShortenerController.class).redirectTo(hash, null)).toUri())
-                .sponsor(sponsor)
-                .createdNow()
-                .randomOwner()
-                .temporaryRedirect()
-                .treatAsSafe()
-                .ip(ip)
-                .unknownCountry()
-                .build();
+        System.out.println("HASH: " + su.getHash());
         return shortURLRepository.save(su);
     }
 }

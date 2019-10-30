@@ -1,37 +1,34 @@
 package urlshortener.web;
 
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
+
+import java.net.URI;
+
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.Assume;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.mockito.stubbing.Answer;
 import org.junit.runner.RunWith;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.web.context.WebApplicationContext;
+import static org.hamcrest.Matchers.nullValue;
+
 import urlshortener.Application;
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ShortURLService;
-
-import java.nio.charset.Charset;
-import java.net.URI;
-
-import static org.mockito.Mockito.when;
-import static org.mockito.ArgumentMatchers.any;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
-import static urlshortener.fixtures.ShortURLFixture.someUrl;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Application.class)
@@ -57,152 +54,54 @@ public class UrlShortenerTests3 {
     }
 
     @Test
-    public void test() throws Exception {
-            
-    }
-
-    @Test
-    public void thatShortenerExceedsIPLimitForRedirection() throws Exception {
-        when(shortUrlService.findByKey("someKey")).thenReturn(someUrl());
-
-        RequestPostProcessor postProcessor1 = request -> {
-                request.setRemoteAddr("192.168.0.1");
-                return request;
-        };
-
-        RequestPostProcessor postProcessor2 = request -> {
-                request.setRemoteAddr("192.168.0.2");
-                return request;
-            };
-
-        // 192.168.0.1
-        for (int i = 0; i < urlShortener.THROTTLING_GET_LIMIT; i++) {
-            mockMvc.perform(get("/{id}", "someKey")
-                    .with(postProcessor1))
-                    .andExpect(status().isTemporaryRedirect())
-                    .andExpect(redirectedUrl("http://example.com/"));
-        }
-            
-        mockMvc.perform(get("/{id}", "someKey")
-                .with(postProcessor1))
-                .andExpect(status().is(429));
-
-        // 192.168.0.2
-        for (int i = 0; i < urlShortener.THROTTLING_GET_LIMIT; i++) {
-            mockMvc.perform(get("/{id}", "someKey")
-                    .with(postProcessor2))
-                    .andExpect(status().isTemporaryRedirect())
-                    .andExpect(redirectedUrl("http://example.com/"));
-        }
-            
-        mockMvc.perform(get("/{id}", "someKey")
-                .with(postProcessor2))
-                .andExpect(status().is(429));
-
-        // sleep 1 minute
-        Thread.sleep(60 * 1000 + 100);
-
-        // 192.168.0.1
-        for (int i = 0; i < urlShortener.THROTTLING_GET_LIMIT; i++) {
-            mockMvc.perform(get("/{id}", "someKey")
-                    .with(postProcessor1))
-                    .andExpect(status().isTemporaryRedirect())
-                    .andExpect(redirectedUrl("http://example.com/"));
-        }
-            
-        mockMvc.perform(get("/{id}", "someKey")
-                .with(postProcessor1))
-                .andExpect(status().is(429));
-
-        // 192.168.0.2
-        for (int i = 0; i < urlShortener.THROTTLING_GET_LIMIT; i++) {
-            mockMvc.perform(get("/{id}", "someKey")
-                    .with(postProcessor2))
-                    .andExpect(status().isTemporaryRedirect())
-                    .andExpect(redirectedUrl("http://example.com/"));
-        }
-            
-        mockMvc.perform(get("/{id}", "someKey")
-                .with(postProcessor2))
-                .andExpect(status().is(429));
-    }
-
-
-    @Test
-    public void thatShortenerExceedsIPLimitForCreation() throws Exception {
-        if (!runThrottlingTests) return;
+    public void AddNewSponsoredWorkingURI() throws Exception {
         configureSave(null);
 
-        RequestPostProcessor postProcessor1 = request -> {
-                request.setRemoteAddr("192.168.0.1");
-                return request;
-        };
+        mockMvc.perform(post("/link").param("url", "http://example.com/")
+                                     .param("sponsor", "sponsor"))
+        .andDo(print())
+        .andExpect(redirectedUrl("http://localhost/sponsor"))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.hash", is("sponsor")))
+        .andExpect(jsonPath("$.uri", is("http://localhost/sponsor")))
+        .andExpect(jsonPath("$.target", is("http://example.com/")))
+        .andExpect(jsonPath("$.sponsor", is("sponsor")));
+    }
 
-        RequestPostProcessor postProcessor2 = request -> {
-                request.setRemoteAddr("192.168.0.2");
-                return request;
-            };
+    @Test
+    public void AddExistingSponsoredURI() throws Exception {
+        //configureSave(null);
+        //Adding sponsored uri
+        //shortUrlService.save("http://example.com/", "sponsor", "localhost");
+        mockMvc.perform(post("/link").param("url", "http://example.com/")
+                                     .param("sponsor", "sponsor"))
+        .andDo(print());
 
-        // 192.168.0.1
-        for (int i = 0; i < urlShortener.THROTTLING_POST_LIMIT; i++) {
-                mockMvc.perform(post("/link")
-                        .param("url", "http://example.com/")
-                        .with(postProcessor1))
-                        .andExpect(redirectedUrl("http://localhost/f684a3c4"))
-                        .andExpect(status().isCreated());
-        }
-            
-        mockMvc.perform(post("/link")
-                .param("url", "http://example.com/")
-                .with(postProcessor1))
-                .andExpect(status().is(429));
+        mockMvc.perform(post("/link").param("url", "http://example.com/")
+                                     .param("sponsor", "sponsor"))
+        .andDo(print())
+        .andExpect(status().isBadRequest());
+    }
 
-        // 192.168.0.2
-        for (int i = 0; i < urlShortener.THROTTLING_POST_LIMIT; i++) {
-                mockMvc.perform(post("/link")
-                        .param("url", "http://example.com/")
-                        .with(postProcessor2))
-                        .andExpect(redirectedUrl("http://localhost/f684a3c4"))
-                        .andExpect(status().isCreated());
-        }
-            
-        mockMvc.perform(post("/link")
-                .param("url", "http://example.com/")
-                .with(postProcessor2))
-                .andExpect(status().is(429));
+    @Test
+    public void AddReachableURI() throws Exception {
+        configureSave(null);
 
-        // sleep 1 minute
-        Thread.sleep(60 * 1000 + 100);
+        mockMvc.perform(post("/link").param("url", "http://example.com/"))
+                .andDo(print())
+                .andExpect(redirectedUrl("http://localhost/f684a3c4"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.hash", is("f684a3c4")))
+                .andExpect(jsonPath("$.uri", is("http://localhost/f684a3c4")))
+                .andExpect(jsonPath("$.target", is("http://example.com/")))
+                .andExpect(jsonPath("$.sponsor", is(nullValue())));
+    }
 
-        // 192.168.0.1
-        for (int i = 0; i < urlShortener.THROTTLING_POST_LIMIT; i++) {
-                mockMvc.perform(post("/link")
-                        .param("url", "http://example.com/")
-                        .with(postProcessor1))
-                        .andExpect(redirectedUrl("http://localhost/f684a3c4"))
-                        .andExpect(status().isCreated());
-                        ;
-        }
-            
-        mockMvc.perform(post("/link")
-                .param("url", "http://example.com/")
-                .with(postProcessor1))
-                .andExpect(status().is(429));
-
-        // 192.168.0.2
-        for (int i = 0; i < urlShortener.THROTTLING_POST_LIMIT; i++) {
-                mockMvc.perform(post("/link")
-                        .param("url", "http://example.com/")
-                        .with(postProcessor2))
-                        .andExpect(redirectedUrl("http://localhost/f684a3c4"))
-                        .andExpect(status().isCreated());
-                        ;
-        }
-            
-        mockMvc.perform(post("/link")
-                .param("url", "http://example.com/")
-                .with(postProcessor2))
-                .andExpect(status().is(429));
+    @Test
+    public void AddNotReachableURI() throws Exception {
+        mockMvc.perform(post("/link").param("url", "http://notawebpage.com/"))
+        .andDo(print())
+        .andExpect(status().isBadRequest());
     }
 
     private void configureSave(String sponsor) {
