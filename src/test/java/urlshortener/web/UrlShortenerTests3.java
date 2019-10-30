@@ -37,19 +37,7 @@ import static urlshortener.fixtures.ShortURLFixture.someUrl;
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles("context")
 @WebAppConfiguration
-public class UrlShortenerTests2 {
-
-    private final MediaType jsonContentType = new MediaType(
-            MediaType.APPLICATION_JSON.getType(),
-            MediaType.APPLICATION_JSON.getSubtype(),
-            Charset.forName("utf8")
-    );
-
-    private final MediaType textPlainContentType = new MediaType(
-            MediaType.TEXT_PLAIN.getType(),
-            MediaType.TEXT_PLAIN.getSubtype(),
-            Charset.forName("utf8")
-    );
+public class UrlShortenerTests3 {
 
     private MockMvc mockMvc;
 
@@ -62,18 +50,19 @@ public class UrlShortenerTests2 {
     @MockBean
     private ShortURLService shortUrlService;
 
-    @Value("${throttling.tests.run:0}")
-    private boolean runThrottlingTests;
 
     @Before
     public void setup() {
-        if (!runThrottlingTests) return;
         this.mockMvc = webAppContextSetup(webApplicationContext).build();
     }
 
     @Test
+    public void test() throws Exception {
+            
+    }
+
+    @Test
     public void thatShortenerExceedsIPLimitForRedirection() throws Exception {
-        if (!runThrottlingTests) return;
         when(shortUrlService.findByKey("someKey")).thenReturn(someUrl());
 
         RequestPostProcessor postProcessor1 = request -> {

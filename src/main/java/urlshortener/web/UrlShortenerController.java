@@ -70,11 +70,19 @@ public class UrlShortenerController {
     @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_POST_LIMIT, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<ShortURL> shortener(@RequestParam("url") String url,
                                               @RequestParam(value = "sponsor", required = false) String sponsor,
+                                              @RequestParam(value = "custom_url", required = false) String c_url,
                                               HttpServletRequest request) {
         UrlValidator urlValidator = new UrlValidator(new String[]{"http",
                 "https"});
         if (urlValidator.isValid(url) && isAccesible(url)) {
-            ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());
+            ShortURL su;
+            if (c_url != null && !c_url.equals("")) {
+                su = shortUrlService.save(url, c_url, sponsor, request.getRemoteAddr());
+            }
+            else {
+                su = shortUrlService.save(url, sponsor, request.getRemoteAddr());                                   
+            }
+            
             HttpHeaders h = new HttpHeaders();
             h.setLocation(su.getUri());
             return new ResponseEntity<>(su, h, HttpStatus.CREATED);
@@ -83,24 +91,6 @@ public class UrlShortenerController {
         }
     }
 
-    //Custom URL request
-    @RequestMapping(value = "/link_custom", method = RequestMethod.POST)
-    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_POST_LIMIT, timeUnit = TimeUnit.MINUTES)
-    public ResponseEntity<ShortURL> shortener(@RequestParam("url") String url,
-                                              @RequestParam(value = "sponsor", required = false) String sponsor,
-                                              @RequestParam("custom_url") String c_url,
-                                              HttpServletRequest request) {
-        UrlValidator urlValidator = new UrlValidator(new String[]{"http",
-                "https"});
-        if (urlValidator.isValid(url) && isAccesible(url)) {
-            ShortURL su = shortUrlService.save(url, c_url, sponsor, request.getRemoteAddr());
-            HttpHeaders h = new HttpHeaders();
-            h.setLocation(su.getUri());
-            return new ResponseEntity<>(su, h, HttpStatus.CREATED);
-        } else {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-    }
 
     private String extractIP(HttpServletRequest request) {
         return request.getRemoteAddr();
