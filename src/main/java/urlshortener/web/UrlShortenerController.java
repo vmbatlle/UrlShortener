@@ -73,10 +73,8 @@ public class UrlShortenerController {
                                               HttpServletRequest request) {
         UrlValidator urlValidator = new UrlValidator(new String[]{"http",
                 "https"});
-                //System.out.println("HOLAAAAAANORMALllllll " + sponsor);
         if (urlValidator.isValid(url) && isAccesible(url)) {
             if (sponsor != null && shortUrlService.findByKey(sponsor) != null) {
-                //System.out.println("HOLAAAAAA");
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());                                               

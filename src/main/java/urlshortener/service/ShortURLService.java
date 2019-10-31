@@ -22,7 +22,6 @@ public class ShortURLService {
     }
 
     public ShortURL save(String url, String sponsor, String ip) {
-        if (sponsor != null) { System.out.println("SPONSOR: " + sponsor);}
         ShortURL su = ShortURLBuilder.newInstance()
                 .target(url)
                 .sponsor(sponsor)
@@ -34,7 +33,6 @@ public class ShortURLService {
                 .ip(ip)
                 .unknownCountry()
                 .build();
-        System.out.println("HASH: " + su.getHash());
         return shortURLRepository.save(su);
     }
 }

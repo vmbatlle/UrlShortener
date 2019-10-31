@@ -71,7 +71,6 @@ public class UrlShortenerTests3 {
 
     @Test
     public void AddExistingSponsoredURI() throws Exception {
-        //configureSave(null);
 
         when(shortUrlService.findByKey("sponsor")).thenReturn(someUrl());
 
