@@ -74,11 +74,40 @@ public class SystemTests {
         assertThat(entity.getHeaders().getLocation(), is(new URI("http://example.com/")));
     }
 
+    @Test
+    public void testCreateLinkSponsor() throws Exception {
+        ResponseEntity<String> entity = postLink("http://example.com/","sponsor");
+
+        assertThat(entity.getStatusCode(), is(HttpStatus.CREATED));
+        assertThat(entity.getHeaders().getLocation(), is(new URI("http://localhost:" + this.port + "/sponsor")));
+        assertThat(entity.getHeaders().getContentType(), is(new MediaType("application", "json", StandardCharsets.UTF_8)));
+        ReadContext rc = JsonPath.parse(entity.getBody());
+        assertThat(rc.read("$.hash"), is("sponsor"));
+        assertThat(rc.read("$.uri"), is("http://localhost:" + this.port + "/sponsor"));
+        assertThat(rc.read("$.target"), is("http://example.com/"));
+        assertThat(rc.read("$.sponsor"), is("sponsor"));
+    }
+
+    @Test
+    public void testRedirectionSponsor() throws Exception {
+        postLink("http://example.com/","sponsor");
+
+        ResponseEntity<String> entity = restTemplate.getForEntity("/sponsor", String.class);
+        assertThat(entity.getStatusCode(), is(HttpStatus.TEMPORARY_REDIRECT));
+        assertThat(entity.getHeaders().getLocation(), is(new URI("http://example.com/")));
+    }
+
     private ResponseEntity<String> postLink(String url) {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
         parts.add("url", url);
         return restTemplate.postForEntity("/link", parts, String.class);
     }
 
+    private ResponseEntity<String> postLink(String url, String sponsor) {
+        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        parts.add("url", url);
+        if (sponsor != null) parts.add("sponsor", sponsor);
+        return restTemplate.postForEntity("/link", parts, String.class);
+    }
 
 }

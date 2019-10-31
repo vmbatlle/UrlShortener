@@ -50,6 +50,7 @@ public class ShortURLBuilder {
 
     ShortURLBuilder sponsor(String sponsor) {
         this.sponsor = sponsor;
+        this.hash = sponsor != null ? sponsor : hash;
         return this;
     }
 
