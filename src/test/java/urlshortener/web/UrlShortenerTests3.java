@@ -25,6 +25,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import static org.hamcrest.Matchers.nullValue;
+import static urlshortener.fixtures.ShortURLFixture.someUrl;
 
 import urlshortener.Application;
 import urlshortener.domain.ShortURL;
@@ -55,7 +56,7 @@ public class UrlShortenerTests3 {
 
     @Test
     public void AddNewSponsoredWorkingURI() throws Exception {
-        configureSave(null);
+        configureSave("sponsor");
 
         mockMvc.perform(post("/link").param("url", "http://example.com/")
                                      .param("sponsor", "sponsor"))
@@ -71,11 +72,8 @@ public class UrlShortenerTests3 {
     @Test
     public void AddExistingSponsoredURI() throws Exception {
         //configureSave(null);
-        //Adding sponsored uri
-        //shortUrlService.save("http://example.com/", "sponsor", "localhost");
-        mockMvc.perform(post("/link").param("url", "http://example.com/")
-                                     .param("sponsor", "sponsor"))
-        .andDo(print());
+
+        when(shortUrlService.findByKey("sponsor")).thenReturn(someUrl());
 
         mockMvc.perform(post("/link").param("url", "http://example.com/")
                                      .param("sponsor", "sponsor"))
@@ -99,23 +97,42 @@ public class UrlShortenerTests3 {
 
     @Test
     public void AddNotReachableURI() throws Exception {
+        configureSave(null);
+
         mockMvc.perform(post("/link").param("url", "http://notawebpage.com/"))
         .andDo(print())
         .andExpect(status().isBadRequest());
     }
 
     private void configureSave(String sponsor) {
-        when(shortUrlService.save(any(), any(), any()))
-                .then((Answer<ShortURL>) invocation -> new ShortURL(
-                        "f684a3c4",
-                        "http://example.com/",
-                        URI.create("http://localhost/f684a3c4"),
-                        sponsor,
-                        null,
-                        null,
-                        0,
-                        false,
-                        null,
-                        null));
+        if (sponsor != null) {
+            when(shortUrlService.save(any(), any(), any()))
+                    .then((Answer<ShortURL>) invocation -> new ShortURL(
+                            sponsor,
+                            "http://example.com/",
+                            URI.create("http://localhost/sponsor"),
+                            sponsor,
+                            null,
+                            null,
+                            0,
+                            false,
+                            null,
+                            null));
+        }
+        else {
+
+            when(shortUrlService.save(any(), any(), any()))
+                    .then((Answer<ShortURL>) invocation -> new ShortURL(
+                            "f684a3c4",
+                            "http://example.com/",
+                            URI.create("http://localhost/f684a3c4"),
+                            sponsor,
+                            null,
+                            null,
+                            0,
+                            false,
+                            null,
+                            null));
+        }
     }
 }
