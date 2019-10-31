@@ -54,7 +54,7 @@ public class UrlShortenerController {
                 e.printStackTrace();
             }
             if(data != null){
-                clickService.saveClick2(id, extractIP(request), data.get(0), data.get(1), data.get(2));
+                clickService.saveClick2(id, extractIP(request), data.get(0), data.get(1), data.get(2), request.getHeader("referer"));
             }
             else{
                 clickService.saveClick(id, extractIP(request));

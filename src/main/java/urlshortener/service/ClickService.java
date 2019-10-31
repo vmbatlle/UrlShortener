@@ -30,8 +30,8 @@ public class ClickService {
         log.info(cl != null ? "[" + hash + "] saved with id [" + cl.getId() + "]" : "[" + hash + "] was not saved");
     }
 
-    public void saveClick2(String hash, String ip, String os, String device, String browser) {
-        Click cl = ClickBuilder.newInstance().hash(hash).createdNow().ip(ip).browser(browser).platform(os).build();
+    public void saveClick2(String hash, String ip, String os, String device, String browser, String referrer) {
+        Click cl = ClickBuilder.newInstance().hash(hash).createdNow().ip(ip).browser(browser).platform(os).referrer(referrer).build();
         cl = clickRepository.save(cl);
         log.info(cl.toString());
         log.info(cl != null ? "[" + hash + "] saved with id [" + cl.getId() + "]" : "[" + hash + "] was not saved");
@@ -49,6 +49,7 @@ public class ClickService {
             
             for (Click click : lc) {
                 item.put("URI", ("http://.../"+click.getHash()));
+                item.put("Referrer URI", click.getReferrer());
                 item.put("Browser", click.getBrowser());
                 item.put("OS", click.getPlatform());
                 item.put("IP", click.getIp());

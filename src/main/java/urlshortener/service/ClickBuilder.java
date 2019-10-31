@@ -55,6 +55,11 @@ public class ClickBuilder {
         return this;
     }
     
+    ClickBuilder referrer(String referrer) {
+        this.referrer = referrer;
+        return this;
+    }
+    
     ClickBuilder browser(String browser) {
         this.browser = browser;
         return this;
