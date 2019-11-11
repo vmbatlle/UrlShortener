@@ -74,6 +74,7 @@ public class UrlShortenerController {
         UrlValidator urlValidator = new UrlValidator(new String[]{"http",
                 "https"});
         if (urlValidator.isValid(url) && isAccesible(url)) {
+            if (sponsor != null && sponsor.equals("")) sponsor = null;
             if (sponsor != null && shortUrlService.findByKey(sponsor) != null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
