@@ -3,6 +3,7 @@ jdk:
   - openjdk8
 deploy:
   provider: heroku
+  branch: develop
   api-key:
     secure: $HEROKU_API_KEY
   app: url-shortener-iw-19
