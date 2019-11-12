@@ -3,6 +3,7 @@ package urlshortener.web;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import urlshortener.domain.ShortURL;
@@ -68,6 +69,19 @@ public class UrlShortenerController {
     @RequestMapping(value = "/all", method = RequestMethod.GET)
     public String all() {
         return clickService.clicksRecived();
+    }
+    
+    @RequestMapping(value = "/download-data", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> download_all() {
+        String json = clickService.clicksRecived();
+        String fileName = "clicks.json";
+        byte[] isr = json.getBytes();
+        HttpHeaders respHeaders = new HttpHeaders();
+		respHeaders.setContentLength(isr.length);
+		respHeaders.setContentType(new MediaType("text", "json"));
+		respHeaders.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+		respHeaders.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName);
+		return new ResponseEntity<byte[]>(isr, respHeaders, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/link", method = RequestMethod.POST)

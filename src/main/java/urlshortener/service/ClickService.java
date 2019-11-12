@@ -38,6 +38,19 @@ public class ClickService {
     }
 
     public String clicksRecived(){
+        long lim = 100;//Future parameters for escalability
+        long off = 0;
+        JSONObject json = this.jsonClicks();
+        try{
+            return json.toString(4);
+        }catch(Exception e){
+            e.printStackTrace();
+            return json.toString();
+        }
+        
+    }
+
+    public JSONObject jsonClicks(){
         long lim = 100;
         long off = 0;
         List<Click> lc = clickRepository.list(lim, off);
@@ -48,7 +61,7 @@ public class ClickService {
             JSONObject item = new JSONObject();
             
             for (Click click : lc) {
-                item.put("URI", ("http://.../"+click.getHash()));
+                item.put("URI", click.getId());
                 item.put("Referrer URI", click.getReferrer());
                 item.put("Browser", click.getBrowser());
                 item.put("OS", click.getPlatform());
@@ -58,12 +71,11 @@ public class ClickService {
                 item = new JSONObject();
             }
             json.put("clicks", array);
-            return json.toString(4);
+            
         }catch(Exception e){
             e.printStackTrace();
-            return json.toString();
         }
-        
+        return json;
     }
 
 }
