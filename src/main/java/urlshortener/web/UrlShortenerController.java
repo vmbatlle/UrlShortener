@@ -31,11 +31,18 @@ import org.json.JSONObject;
 
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
+import com.weddini.throttling.Throttling;
+import com.weddini.throttling.ThrottlingType;
+import java.util.concurrent.TimeUnit;
+
 @RestController
 public class UrlShortenerController {
     private final ShortURLService shortUrlService;
 
     private final ClickService clickService;
+
+    public static final int THROTTLING_GET_LIMIT = 10;
+    public static final int THROTTLING_POST_LIMIT = 10;
 
     public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService) {
         this.shortUrlService = shortUrlService;
@@ -43,6 +50,7 @@ public class UrlShortenerController {
     }
 
     @RequestMapping(value = "/{id:(?!link|index).*}", method = RequestMethod.GET)
+    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<?> redirectTo(@PathVariable String id, HttpServletRequest request) {
         ShortURL l = shortUrlService.findByKey(id);
         if (l != null) {
@@ -85,6 +93,7 @@ public class UrlShortenerController {
     }
 
     @RequestMapping(value = "/link", method = RequestMethod.POST)
+    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_POST_LIMIT, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<ShortURL> shortener(@RequestParam("url") String url,
             @RequestParam(value = "sponsor", required = false) String sponsor, HttpServletRequest request) {
         UrlValidator urlValidator = new UrlValidator(new String[] { "http", "https" });
@@ -149,4 +158,9 @@ public class UrlShortenerController {
         h.setLocation(URI.create(l.getTarget()));
         return new ResponseEntity<>(h, HttpStatus.valueOf(l.getMode()));
     }
+/*
+    @ResponseStatus(code = HttpStatus.TOO_MANY_REQUESTS, reason = "Too many requests")
+    public class ThrottlingException extends RuntimeException {
+    }
+*/
 }
