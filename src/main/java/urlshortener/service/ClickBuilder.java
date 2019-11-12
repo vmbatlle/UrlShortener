@@ -12,7 +12,8 @@ public class ClickBuilder {
     private String browser;
     private String platform;
     private String ip;
-    private String device;
+    // TODO: Use this attribute for its purpose
+    // private String device;
     private String country;
 
     static ClickBuilder newInstance() {
@@ -70,10 +71,12 @@ public class ClickBuilder {
         return this;
     }
     
+    /*
     ClickBuilder device(String device) {
         this.device = device;
         return this;
     }
+    */
 
     ClickBuilder withoutCountry() {
         this.country = null;

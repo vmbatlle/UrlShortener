@@ -8,7 +8,8 @@ import org.springframework.stereotype.Service;
 import urlshortener.domain.Click;
 import urlshortener.repository.ClickRepository;
 
-import java.sql.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 @Service
@@ -36,8 +37,9 @@ public class ClickService {
     }
 
     public String clicksRecived(){
-        long lim = 100;//Future parameters for escalability
-        long off = 0;
+        // TODO: Use future parameters for escalability
+        // long lim = 100;
+        // long off = 0;
         JSONObject json = this.jsonClicks();
         try{
             return json.toString(4);
@@ -64,7 +66,8 @@ public class ClickService {
                 item.put("Browser", click.getBrowser());
                 item.put("OS", click.getPlatform());
                 item.put("IP", click.getIp());
-                item.put("Date", click.getCreated().toGMTString());
+                DateFormat dateFormat = new SimpleDateFormat("d mon yyyy hh:mm:ss GMT");
+                item.put("Date", dateFormat.format(click.getCreated()));
                 array.put(item);
                 item = new JSONObject();
             }

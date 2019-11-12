@@ -15,7 +15,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -23,14 +22,9 @@ import java.net.URI;
 import java.net.URL;
 
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.Scanner;
 
-import org.json.JSONException;
 import org.json.JSONObject;
-
-import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 
 import com.weddini.throttling.Throttling;
 import com.weddini.throttling.ThrottlingType;
@@ -141,7 +135,7 @@ public class UrlShortenerController {
         String param1 = request.getHeader("User-Agent");
         String param2 = "e4edfb3090e960cd96d7a9df73acc622"; // API-KEY
 
-        url = url + "access_key=e4edfb3090e960cd96d7a9df73acc622&ua=" + param1;
+        url = url + "access_key=" + param2 + "&ua=" + param1;
         URL uri = new URL(url.replace("\"", "%22").replace(" ",  "%20"));
         HttpURLConnection connection = (HttpURLConnection) uri.openConnection();
         connection.setRequestMethod("GET");
@@ -181,9 +175,4 @@ public class UrlShortenerController {
         h.setLocation(URI.create(l.getTarget()));
         return new ResponseEntity<>(h, HttpStatus.valueOf(l.getMode()));
     }
-/*
-    @ResponseStatus(code = HttpStatus.TOO_MANY_REQUESTS, reason = "Too many requests")
-    public class ThrottlingException extends RuntimeException {
-    }
-*/
 }

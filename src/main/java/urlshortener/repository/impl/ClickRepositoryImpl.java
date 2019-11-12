@@ -13,7 +13,6 @@ import urlshortener.domain.Click;
 import urlshortener.repository.ClickRepository;
 
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Collections;

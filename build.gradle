@@ -18,7 +18,6 @@ repositories {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'java-json')
     implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter-hateoas'
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -27,6 +26,7 @@ dependencies {
     implementation 'com.google.guava:guava:28.1-jre'
 
     compile 'com.weddini.throttling:spring-boot-throttling-starter:0.0.9'
+    implementation 'org.json:json:20190722'
 
     runtime 'org.webjars:bootstrap:3.3.5'
     runtime 'org.webjars:jquery:2.1.4'

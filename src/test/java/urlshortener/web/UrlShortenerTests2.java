@@ -1,28 +1,23 @@
 package urlshortener.web;
 
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.Assume;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.mockito.stubbing.Answer;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.web.context.WebApplicationContext;
 import urlshortener.Application;
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ShortURLService;
 
-import java.nio.charset.Charset;
 import java.net.URI;
 
 import static org.mockito.Mockito.when;
@@ -39,25 +34,10 @@ import static urlshortener.fixtures.ShortURLFixture.someUrl;
 @WebAppConfiguration
 public class UrlShortenerTests2 {
 
-    private final MediaType jsonContentType = new MediaType(
-            MediaType.APPLICATION_JSON.getType(),
-            MediaType.APPLICATION_JSON.getSubtype(),
-            Charset.forName("utf8")
-    );
-
-    private final MediaType textPlainContentType = new MediaType(
-            MediaType.TEXT_PLAIN.getType(),
-            MediaType.TEXT_PLAIN.getSubtype(),
-            Charset.forName("utf8")
-    );
-
     private MockMvc mockMvc;
 
     @Autowired
     private WebApplicationContext webApplicationContext;
-
-    @Autowired
-    private UrlShortenerController urlShortener;
 
     @MockBean
     private ShortURLService shortUrlService;
@@ -87,7 +67,7 @@ public class UrlShortenerTests2 {
             };
 
         // 192.168.0.1
-        for (int i = 0; i < urlShortener.THROTTLING_GET_LIMIT; i++) {
+        for (int i = 0; i < UrlShortenerController.THROTTLING_GET_LIMIT; i++) {
             mockMvc.perform(get("/{id}", "someKey")
                     .with(postProcessor1))
                     .andExpect(status().isTemporaryRedirect())
@@ -99,7 +79,7 @@ public class UrlShortenerTests2 {
                 .andExpect(status().is(429));
 
         // 192.168.0.2
-        for (int i = 0; i < urlShortener.THROTTLING_GET_LIMIT; i++) {
+        for (int i = 0; i < UrlShortenerController.THROTTLING_GET_LIMIT; i++) {
             mockMvc.perform(get("/{id}", "someKey")
                     .with(postProcessor2))
                     .andExpect(status().isTemporaryRedirect())
@@ -114,7 +94,7 @@ public class UrlShortenerTests2 {
         Thread.sleep(60 * 1000 + 100);
 
         // 192.168.0.1
-        for (int i = 0; i < urlShortener.THROTTLING_GET_LIMIT; i++) {
+        for (int i = 0; i < UrlShortenerController.THROTTLING_GET_LIMIT; i++) {
             mockMvc.perform(get("/{id}", "someKey")
                     .with(postProcessor1))
                     .andExpect(status().isTemporaryRedirect())
@@ -126,7 +106,7 @@ public class UrlShortenerTests2 {
                 .andExpect(status().is(429));
 
         // 192.168.0.2
-        for (int i = 0; i < urlShortener.THROTTLING_GET_LIMIT; i++) {
+        for (int i = 0; i < UrlShortenerController.THROTTLING_GET_LIMIT; i++) {
             mockMvc.perform(get("/{id}", "someKey")
                     .with(postProcessor2))
                     .andExpect(status().isTemporaryRedirect())
@@ -155,7 +135,7 @@ public class UrlShortenerTests2 {
             };
 
         // 192.168.0.1
-        for (int i = 0; i < urlShortener.THROTTLING_POST_LIMIT; i++) {
+        for (int i = 0; i < UrlShortenerController.THROTTLING_POST_LIMIT; i++) {
                 mockMvc.perform(post("/link")
                         .param("url", "http://example.com/")
                         .with(postProcessor1))
@@ -169,7 +149,7 @@ public class UrlShortenerTests2 {
                 .andExpect(status().is(429));
 
         // 192.168.0.2
-        for (int i = 0; i < urlShortener.THROTTLING_POST_LIMIT; i++) {
+        for (int i = 0; i < UrlShortenerController.THROTTLING_POST_LIMIT; i++) {
                 mockMvc.perform(post("/link")
                         .param("url", "http://example.com/")
                         .with(postProcessor2))
@@ -186,7 +166,7 @@ public class UrlShortenerTests2 {
         Thread.sleep(60 * 1000 + 100);
 
         // 192.168.0.1
-        for (int i = 0; i < urlShortener.THROTTLING_POST_LIMIT; i++) {
+        for (int i = 0; i < UrlShortenerController.THROTTLING_POST_LIMIT; i++) {
                 mockMvc.perform(post("/link")
                         .param("url", "http://example.com/")
                         .with(postProcessor1))
@@ -201,7 +181,7 @@ public class UrlShortenerTests2 {
                 .andExpect(status().is(429));
 
         // 192.168.0.2
-        for (int i = 0; i < urlShortener.THROTTLING_POST_LIMIT; i++) {
+        for (int i = 0; i < UrlShortenerController.THROTTLING_POST_LIMIT; i++) {
                 mockMvc.perform(post("/link")
                         .param("url", "http://example.com/")
                         .with(postProcessor2))
