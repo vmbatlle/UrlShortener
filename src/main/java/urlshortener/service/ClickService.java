@@ -26,14 +26,12 @@ public class ClickService {
     public void saveClick(String hash, String ip) {
         Click cl = ClickBuilder.newInstance().hash(hash).createdNow().ip(ip).build();
         cl = clickRepository.save(cl);
-        log.info(cl.toString());
         log.info(cl != null ? "[" + hash + "] saved with id [" + cl.getId() + "]" : "[" + hash + "] was not saved");
     }
 
     public void saveClick2(String hash, String ip, String os, String device, String browser, String referrer) {
         Click cl = ClickBuilder.newInstance().hash(hash).createdNow().ip(ip).browser(browser).platform(os).referrer(referrer).build();
         cl = clickRepository.save(cl);
-        log.info(cl.toString());
         log.info(cl != null ? "[" + hash + "] saved with id [" + cl.getId() + "]" : "[" + hash + "] was not saved");
     }
 
