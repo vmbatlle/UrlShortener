@@ -5,13 +5,16 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.HandlerMapping;
+
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
 
 import javax.servlet.http.HttpServletRequest;
-
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,7 +25,10 @@ import java.net.URI;
 import java.net.URL;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.json.JSONObject;
 
@@ -79,7 +85,16 @@ public class UrlShortenerController {
             else{
                 clickService.saveClick(id, extractIP(request));
             }
-            return createSuccessfulRedirectToResponse(l);
+            Map<String, String[]> params_map = request.getParameterMap();
+            Set<String> params_keys = params_map.keySet();
+
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            for (String key : params_keys) params.addAll(key, Arrays.asList(params_map.get(key)));
+            String restOfTheUrl = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+            //String restOfTheUrl = (String) request.getRequestURI();
+
+            if (restOfTheUrl != null) System.out.println(restOfTheUrl);
+            return createSuccessfulRedirectToResponse(l,params);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -170,9 +185,10 @@ public class UrlShortenerController {
         }
     }
 
-    private ResponseEntity<?> createSuccessfulRedirectToResponse(ShortURL l) {
+    private ResponseEntity<?> createSuccessfulRedirectToResponse(ShortURL l, MultiValueMap<String,String> params) {
         HttpHeaders h = new HttpHeaders();
         h.setLocation(URI.create(l.getTarget()));
+        h.addAll(params);
         return new ResponseEntity<>(h, HttpStatus.valueOf(l.getMode()));
     }
 }
