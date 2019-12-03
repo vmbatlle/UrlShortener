@@ -36,6 +36,12 @@ public class ClickService {
         log.info(cl != null ? "[" + hash + "] saved with id [" + cl.getId() + "]" : "[" + hash + "] was not saved");
     }
 
+    public List<Click> clicksReceived(){
+        long off = 0;
+        long lim = 100;
+        return clickRepository.list(lim, off);
+    }
+    
     public String clicksRecived(){
         // TODO: Use future parameters for escalability
         // long lim = 100;
