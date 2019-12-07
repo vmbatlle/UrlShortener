@@ -66,9 +66,9 @@ public class UrlShortenerController {
         return responseCode == HttpURLConnection.HTTP_OK;
     }
 
-    @RequestMapping(value = "/{id:(?!link|index).*}", method = RequestMethod.GET)
-    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT, timeUnit = TimeUnit.MINUTES)
-    public ResponseEntity<?> redirectTo(@PathVariable String id, HttpServletRequest request) {
+@RequestMapping(value = {"/{id:(?!link|index).*}","/{id:(?!link|index|webjars|js|bootstrap)[a-z0-9]*}/**"}, method = RequestMethod.GET)
+    //@Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT, timeUnit = TimeUnit.MINUTES)
+    public ResponseEntity<?> redirectTo(@PathVariable String id, @PathVariable(required = false) String path, HttpServletRequest request) {
         ShortURL l = shortUrlService.findByKey(id);
         if (l != null) {
             List<String> data = null;
@@ -94,6 +94,7 @@ public class UrlShortenerController {
             //String restOfTheUrl = (String) request.getRequestURI();
 
             if (restOfTheUrl != null) System.out.println(restOfTheUrl);
+            if (path != null) System.out.println(path);
             return createSuccessfulRedirectToResponse(l,params);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -119,7 +120,7 @@ public class UrlShortenerController {
     }
 
     @RequestMapping(value = "/link", method = RequestMethod.POST)
-    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_POST_LIMIT, timeUnit = TimeUnit.MINUTES)
+    //@Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_POST_LIMIT, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<ShortURL> shortener(@RequestParam("url") String url,
                                               @RequestParam(value = "sponsor", required = false) String sponsor,
                                               HttpServletRequest request) {
