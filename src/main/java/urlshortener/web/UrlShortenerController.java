@@ -68,7 +68,7 @@ public class UrlShortenerController {
 
 @RequestMapping(value = {"/{id:(?!link|index).*}","/{id:(?!link|index|webjars|js|bootstrap)[a-z0-9]*}/**"}, method = RequestMethod.GET)
     //@Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT, timeUnit = TimeUnit.MINUTES)
-    public ResponseEntity<?> redirectTo(@PathVariable String id, @PathVariable(required = false) String path, HttpServletRequest request) {
+    public ResponseEntity<?> redirectTo(@PathVariable String id, HttpServletRequest request) {
         ShortURL l = shortUrlService.findByKey(id);
         if (l != null) {
             List<String> data = null;
@@ -89,13 +89,18 @@ public class UrlShortenerController {
             Set<String> params_keys = params_map.keySet();
 
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-            for (String key : params_keys) params.addAll(key, Arrays.asList(params_map.get(key)));
+            for (String key : params_keys) { System.out.println(key); params.addAll(key, Arrays.asList(params_map.get(key))); }
             String restOfTheUrl = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
             //String restOfTheUrl = (String) request.getRequestURI();
 
-            if (restOfTheUrl != null) System.out.println(restOfTheUrl);
-            if (path != null) System.out.println(path);
-            return createSuccessfulRedirectToResponse(l,params);
+            if (restOfTheUrl != null && restOfTheUrl.length() > 9) {
+                restOfTheUrl = restOfTheUrl.substring(restOfTheUrl.indexOf("/",2));
+                //System.out.println(restOfTheUrl);
+            } else {
+                restOfTheUrl = "";
+            }
+            //if (path != null) System.out.println(path);
+            return createSuccessfulRedirectToResponse(l,restOfTheUrl,params);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -186,9 +191,19 @@ public class UrlShortenerController {
         }
     }
 
-    private ResponseEntity<?> createSuccessfulRedirectToResponse(ShortURL l, MultiValueMap<String,String> params) {
+    private ResponseEntity<?> createSuccessfulRedirectToResponse(ShortURL l, String restURL, MultiValueMap<String,String> params) {
         HttpHeaders h = new HttpHeaders();
-        h.setLocation(URI.create(l.getTarget()));
+        String querys = "";
+        if (!params.isEmpty()) {
+            querys = "?";
+            int i = params.keySet().size();
+            for (String s : params.keySet()) {
+                querys += s + "=" + params.getFirst(s);
+                i--;
+                if (i != 0) querys += "&";
+            }
+        }
+        h.setLocation(URI.create(l.getTarget() + restURL + querys));
         h.addAll(params);
         return new ResponseEntity<>(h, HttpStatus.valueOf(l.getMode()));
     }
