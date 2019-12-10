@@ -6,11 +6,19 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import urlshortener.domain.Click;
+
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.HandlerMapping;
+
+
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
@@ -21,15 +29,24 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
 import java.util.Optional;
+import java.util.Map;
+import java.util.Set;
 
 import org.json.JSONObject;
+
+import org.jsoup.Connection.Response;
+import org.jsoup.HttpStatusException;
+import org.jsoup.Jsoup;
 
 import com.weddini.throttling.Throttling;
 import com.weddini.throttling.ThrottlingType;
@@ -49,23 +66,53 @@ public class UrlShortenerController {
         this.clickService = clickService;
     }
 
-    private boolean isAccesible(String url_s) {
-        int responseCode = 400;
+    private String final_url(String url) {
+        Response response;
         try {
-            URL url = new URL(url_s);
-            HttpURLConnection huc = (HttpURLConnection) url.openConnection();
-            huc.setRequestMethod("HEAD");
-            responseCode = huc.getResponseCode();
-        } catch (MalformedURLException e1) {
-            //e1.printStackTrace();
-        } catch (IOException e) {
-            //e.printStackTrace();
+            response = Jsoup.connect(url).timeout(1000).userAgent("Mozilla").execute();
+        } catch (HttpStatusException e) {
+            e.printStackTrace();
+            return url;
+        } catch (IOException e3) {
+            e3.printStackTrace();
+            return url;
         }
-
-        return responseCode == HttpURLConnection.HTTP_OK;
+        return response.url().toString();
     }
 
-    @RequestMapping(value = "/{id:(?!link|index).*}", method = RequestMethod.GET)
+    private boolean isAccesible(String url_s) {
+        boolean ret = false;
+        try {
+            // ret = InetAddress.getByName(new URL(url_s).getHost()).isReachable(1000);
+            // int responseCode = 400;
+            // URL url = new URL(url_s);
+            // HttpURLConnection huc = (HttpURLConnection) url.openConnection();
+            // huc.setRequestMethod("HEAD");
+            // huc.setConnectTimeout(1000);
+            // huc.setReadTimeout(1000);
+            // responseCode = huc.getResponseCode();
+            // ret = ret && ( responseCode == HttpURLConnection.HTTP_OK);
+            
+            int responseCode = 400;
+            Response response = Jsoup.connect(url_s).timeout(1000).userAgent("Mozilla").execute();
+            responseCode = response.statusCode();
+            //System.out.println("STCODE: " + responseCode);
+            ret = responseCode == HttpURLConnection.HTTP_OK;
+
+        } catch (HttpStatusException e1){
+            e1.printStackTrace();
+            ret = false;
+        } catch (UnknownHostException e2) {
+            e2.printStackTrace();
+            ret = false;
+        } catch (IOException e3) {
+            e3.printStackTrace();
+            ret = false;
+        }
+        return ret;
+    }
+
+@RequestMapping(value = {"/{id:(?!link|index).*}","/{id:(?!link|index|webjars|js|bootstrap)[a-z0-9]*}/**"}, method = RequestMethod.GET)
     @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<?> redirectTo(@PathVariable String id, HttpServletRequest request) {
         ShortURL l = shortUrlService.findByKey(id);
@@ -84,7 +131,22 @@ public class UrlShortenerController {
             else{
                 clickService.saveClick(id, extractIP(request));
             }
-            return createSuccessfulRedirectToResponse(l);
+            Map<String, String[]> params_map = request.getParameterMap();
+            Set<String> params_keys = params_map.keySet();
+
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            for (String key : params_keys) { System.out.println(key); params.addAll(key, Arrays.asList(params_map.get(key))); }
+            String restOfTheUrl = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+            //String restOfTheUrl = (String) request.getRequestURI();
+
+            if (restOfTheUrl != null && restOfTheUrl.length() > 9) {
+                restOfTheUrl = restOfTheUrl.substring(restOfTheUrl.indexOf("/",2));
+                //System.out.println(restOfTheUrl);
+            } else {
+                restOfTheUrl = "";
+            }
+            //if (path != null) System.out.println(path);
+            return createSuccessfulRedirectToResponse(l,restOfTheUrl,params);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -134,6 +196,8 @@ public class UrlShortenerController {
             if (sponsor != null && shortUrlService.findByKey(sponsor) != null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
+            url = final_url(url);
+            
             ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());                                               
             HttpHeaders h = new HttpHeaders();
             h.setLocation(su.getUri());
@@ -148,9 +212,21 @@ public class UrlShortenerController {
         return request.getRemoteAddr();
     }
 
-    private ResponseEntity<?> createSuccessfulRedirectToResponse(ShortURL l) {
+    private ResponseEntity<?> createSuccessfulRedirectToResponse(ShortURL l, String restURL, MultiValueMap<String,String> params) {
+
         HttpHeaders h = new HttpHeaders();
-        h.setLocation(URI.create(l.getTarget()));
+        String querys = "";
+        if (!params.isEmpty()) {
+            querys = "?";
+            int i = params.keySet().size();
+            for (String s : params.keySet()) {
+                querys += s + "=" + params.getFirst(s);
+                i--;
+                if (i != 0) querys += "&";
+            }
+        }
+        h.setLocation(URI.create(l.getTarget() + restURL + querys));
+        h.addAll(params);
         return new ResponseEntity<>(h, HttpStatus.valueOf(l.getMode()));
     }
 }
