@@ -1,14 +1,23 @@
 package urlshortener.web;
 
 import org.apache.commons.validator.routines.UrlValidator;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
+
+import urlshortener.domain.Click;
+
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.HandlerMapping;
+
 
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
@@ -28,6 +37,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import java.util.Optional;
 import java.util.Map;
 import java.util.Set;
 
@@ -108,7 +119,7 @@ public class UrlShortenerController {
         if (l != null) {
             List<String> data = null;
             try {
-                data = extractInfoUserAgent(request);
+                data = APIAccess.extractInfoUserAgent(request);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -141,9 +152,24 @@ public class UrlShortenerController {
         }
     }
 
+    /*@RequestMapping(value = "/all", method = RequestMethod.GET)
+    public List<Click> all(@RequestParam("page") Optional<Long> page,
+                        @RequestParam("size") Optional<Long> size) {
+        return clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 100));
+    }*/
+
+    @GetMapping("/all")
     @RequestMapping(value = "/all", method = RequestMethod.GET)
-    public String all() {
-        return clickService.clicksRecived();
+    public ModelAndView all(/*Model model,*/ @RequestParam("page") Optional<Long> page,
+                        @RequestParam("size") Optional<Long> size) {
+        ModelAndView modelo = new ModelAndView("listClick");
+        List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 5));
+        modelo.addObject("clicks", lc);
+        Long count = clickService.count();
+        modelo.addObject("pages", (int) (count / size.orElse((long) 5)));
+        modelo.addObject("page", page.orElse((long) 1));
+        System.out.println("Pagina actual: " + page.orElse((long) 1) + " Paginas: " + (count / size.orElse((long) 5)) );
+        return modelo;
     }
     
     @RequestMapping(value = "/download-data", method = RequestMethod.GET)
@@ -186,49 +212,8 @@ public class UrlShortenerController {
         return request.getRemoteAddr();
     }
 
-    private List<String> extractInfoUserAgent(HttpServletRequest request) throws MalformedURLException, IOException {
-        String url = "http://api.userstack.com/detect?";
-        // String charset = "UTF-8"; // Or in Java 7 and later, use the constant:
-        // java.nio.charset.StandardCharsets.UTF_8.name()
-        String param1 = request.getHeader("User-Agent");
-        String param2 = "e4edfb3090e960cd96d7a9df73acc622"; // API-KEY
-
-        url = url + "access_key=" + param2 + "&ua=" + param1;
-        URL uri = new URL(url.replace("\"", "%22").replace(" ",  "%20"));
-        HttpURLConnection connection = (HttpURLConnection) uri.openConnection();
-        connection.setRequestMethod("GET");
-        connection.setRequestProperty("User-Agent", "Mozilla/5.0");
-        int responseCode = connection.getResponseCode();
-        System.out.println("\nSending 'GET' request to URL : " + url);
-        System.out.println("Response Code : " + responseCode);
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String inputLine;
-        StringBuffer response = new StringBuffer();
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-        in.close();
-
-        // print in String
-        System.out.println(response.toString());
-        
-        // Read JSON response and print
-        try {
-            JSONObject myResponse;
-            List<String> data = new ArrayList<>();
-            myResponse = new JSONObject(response.toString());
-            data.add(myResponse.getJSONObject("os").getString("name"));
-            data.add(myResponse.getJSONObject("device").getString("type"));
-            data.add(myResponse.getJSONObject("browser").getString("name"));
-            return data;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
     private ResponseEntity<?> createSuccessfulRedirectToResponse(ShortURL l, String restURL, MultiValueMap<String,String> params) {
+
         HttpHeaders h = new HttpHeaders();
         String querys = "";
         if (!params.isEmpty()) {
