@@ -45,16 +45,17 @@ public class APIAccess {
     @Value("${userstack.key}")
     private static String userStackKey;
 
-    public static List<String> extractInfoUserAgent(HttpServletRequest ua_request) throws MalformedURLException, IOException {
+    public static List<String> extractInfoUserAgent(HttpServletRequest ua_request)
+            throws MalformedURLException, IOException {
         OkHttpClient client = new OkHttpClient();
-        
+
         String param2 = "e4edfb3090e960cd96d7a9df73acc622"; // API-KEY
         HttpUrl.Builder urlBuilder = HttpUrl.parse("http://api.userstack.com/detect?").newBuilder();
-        System.out.println("Key userStack: " + param2);
         urlBuilder.addQueryParameter("access_key", param2);
+        System.out.println("Key guardada en properties: " + userStackKey);
         urlBuilder.addQueryParameter("ua", ua_request.getHeader("User-Agent"));
         String url = urlBuilder.build().toString();
-        System.out.println("Url generada: " + url );
+        //System.out.println("Url generada: " + url );
         Request request = new Request.Builder()
             .url(url)
             .build();
@@ -62,13 +63,11 @@ public class APIAccess {
         //ObjectMapper objectMapper = new ObjectMapper(); 
         ResponseBody responseBody = client.newCall(request).execute().body(); 
         //String json_response = objectMapper.readValue(responseBody.string(), String.class);
-        System.out.println("Obtenida respuesta");
-        //String document = responseBody.string();
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(responseBody.string());
 
         List<String> data = new ArrayList<>();
         try{
-            System.out.println(responseBody.string());
+            //System.out.println(responseBody.string());
             data.add(JsonPath.read(document, "$['os']['name']"));
             data.add(JsonPath.read(document, "$['device']['type']"));
             data.add(JsonPath.read(document, "$['browser']['name']"));
@@ -80,34 +79,5 @@ public class APIAccess {
         }
 
         return data;
-
-        //String url = "http://api.userstack.com/detect?";
-        /*String charset = "UTF-8"; // Or in Java 7 and later, use the constant:
-        //java.nio.charset.StandardCharsets.UTF_8.name()
-        String param1 = request.getHeader("User-Agent");
-        //System.out.println(userStackKey + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        url = url + "access_key=" + userStackKey + "&ua=" + param1;
-        URL uri = new URL(url.replace("\"", "%22").replace(" ",  "%20"));
-        HttpURLConnection connection = (HttpURLConnection) uri.openConnection();
-        connection.setRequestMethod("GET");
-        connection.setRequestProperty("User-Agent", "Mozilla/5.0");
-        int responseCode = connection.getResponseCode();
-        //System.out.println("\nSending 'GET' request to URL : " + url);
-        System.out.println("Response Code : " + responseCode);
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String inputLine;
-        StringBuffer response = new StringBuffer();
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-        in.close();   
-        JSONObject myResponse;
-        List<String> data = new ArrayList<>();
-        myResponse = new JSONObject(response.toString());
-        data.add(myResponse.getJSONObject("os").getString("name"));
-        data.add(myResponse.getJSONObject("device").getString("type"));
-        data.add(myResponse.getJSONObject("browser").getString("name"));
-        return data;*/
     }
 }

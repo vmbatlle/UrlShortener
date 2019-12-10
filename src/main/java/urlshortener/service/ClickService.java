@@ -36,10 +36,14 @@ public class ClickService {
         log.info(cl != null ? "[" + hash + "] saved with id [" + cl.getId() + "]" : "[" + hash + "] was not saved");
     }
 
-    public List<Click> clicksReceived(){
-        long off = 0;
-        long lim = 100;
-        return clickRepository.list(lim, off);
+    public List<Click> clicksReceived(long pag, long lim){
+        //long off = 0;
+        //long lim = 100;
+        return clickRepository.list(lim, (pag - 1)*lim);
+    }
+
+    public Long count(){
+        return clickRepository.count();
     }
     
     public String clicksRecived(){

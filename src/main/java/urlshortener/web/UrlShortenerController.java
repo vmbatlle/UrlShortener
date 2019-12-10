@@ -6,7 +6,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import urlshortener.domain.Click;
 import urlshortener.domain.ShortURL;
@@ -14,7 +16,6 @@ import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
 
 import javax.servlet.http.HttpServletRequest;
-
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.net.URL;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.json.JSONObject;
 
@@ -88,9 +90,24 @@ public class UrlShortenerController {
         }
     }
 
+    /*@RequestMapping(value = "/all", method = RequestMethod.GET)
+    public List<Click> all(@RequestParam("page") Optional<Long> page,
+                        @RequestParam("size") Optional<Long> size) {
+        return clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 100));
+    }*/
+
+    @GetMapping("/all")
     @RequestMapping(value = "/all", method = RequestMethod.GET)
-    public List<Click> all() {
-        return clickService.clicksReceived();
+    public ModelAndView all(/*Model model,*/ @RequestParam("page") Optional<Long> page,
+                        @RequestParam("size") Optional<Long> size) {
+        ModelAndView modelo = new ModelAndView("listClick");
+        List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 5));
+        modelo.addObject("clicks", lc);
+        Long count = clickService.count();
+        modelo.addObject("pages", (int) (count / size.orElse((long) 5)));
+        modelo.addObject("page", page.orElse((long) 1));
+        System.out.println("Pagina actual: " + page.orElse((long) 1) + " Paginas: " + (count / size.orElse((long) 5)) );
+        return modelo;
     }
     
     @RequestMapping(value = "/download-data", method = RequestMethod.GET)
