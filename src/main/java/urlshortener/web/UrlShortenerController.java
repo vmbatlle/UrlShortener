@@ -33,6 +33,9 @@ import java.util.Set;
 
 import org.json.JSONObject;
 
+import org.jsoup.Connection.Response;
+import org.jsoup.Jsoup;
+
 import com.weddini.throttling.Throttling;
 import com.weddini.throttling.ThrottlingType;
 import java.util.concurrent.TimeUnit;
@@ -54,17 +57,22 @@ public class UrlShortenerController {
     private boolean isAccesible(String url_s) {
         boolean ret = false;
         try {
-            ret = InetAddress.getByName(new URL(url_s).getHost()).isReachable(1000);
-            if (!ret) {
-                int responseCode = 400;
-                URL url = new URL(url_s);
-                HttpURLConnection huc = (HttpURLConnection) url.openConnection();
-                huc.setRequestMethod("HEAD");
-                huc.setConnectTimeout(1000);
-                huc.setReadTimeout(1000);
-                responseCode = huc.getResponseCode();
-                ret = responseCode == HttpURLConnection.HTTP_OK;
-            }
+            // ret = InetAddress.getByName(new URL(url_s).getHost()).isReachable(1000);
+            // int responseCode = 400;
+            // URL url = new URL(url_s);
+            // HttpURLConnection huc = (HttpURLConnection) url.openConnection();
+            // huc.setRequestMethod("HEAD");
+            // huc.setConnectTimeout(1000);
+            // huc.setReadTimeout(1000);
+            // responseCode = huc.getResponseCode();
+            // ret = ret && ( responseCode == HttpURLConnection.HTTP_OK);
+            
+            int responseCode = 400;
+            Response response = Jsoup.connect(url_s).timeout(1000).userAgent("Mozilla").execute();
+            responseCode = response.statusCode();
+            System.out.println("STCODE: " + responseCode);
+            ret = responseCode == HttpURLConnection.HTTP_OK;
+
         } catch (UnknownHostException e2) {
             e2.printStackTrace();
             ret = false;
