@@ -55,7 +55,7 @@ public class UrlShortenerController {
         boolean ret = false;
         try {
             ret = InetAddress.getByName(new URL(url_s).getHost()).isReachable(1000);
-            if (!ret) {
+            if (ret) {
                 int responseCode = 400;
                 URL url = new URL(url_s);
                 HttpURLConnection huc = (HttpURLConnection) url.openConnection();

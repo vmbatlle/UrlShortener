@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
 import java.net.URI;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
@@ -75,6 +76,22 @@ public class UrlShortenerTests3 {
                                      .param("sponsor", "sponsor"))
         .andDo(print())
         .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @Ignore
+    public void AddExistingURIAfter301ToHttps() throws Exception {
+
+        when(shortUrlService.findByKey("sponsor")).thenReturn(someUrl());
+
+        mockMvc.perform(post("/link").param("url", "http://animeflv.net/"))
+        .andDo(print())
+        .andExpect(status().isCreated())
+        .andExpect(redirectedUrl("http://localhost/6972dee0"))
+        .andExpect(jsonPath("$.hash", is("6972dee0")))
+        .andExpect(jsonPath("$.uri", is("http://localhost/6972dee0")))
+        .andExpect(jsonPath("$.target", is("https://animeflv.net/")))
+        .andExpect(jsonPath("$.sponsor", is(nullValue())));
     }
 
     @Test
