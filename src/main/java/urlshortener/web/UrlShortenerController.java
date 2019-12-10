@@ -34,6 +34,7 @@ import java.util.Set;
 import org.json.JSONObject;
 
 import org.jsoup.Connection.Response;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 
 import com.weddini.throttling.Throttling;
@@ -54,6 +55,20 @@ public class UrlShortenerController {
         this.clickService = clickService;
     }
 
+    private String final_url(String url) {
+        Response response;
+        try {
+            response = Jsoup.connect(url).timeout(1000).userAgent("Mozilla").execute();
+        } catch (HttpStatusException e) {
+            e.printStackTrace();
+            return url;
+        } catch (IOException e3) {
+            e3.printStackTrace();
+            return url;
+        }
+        return response.url().toString();
+    }
+
     private boolean isAccesible(String url_s) {
         boolean ret = false;
         try {
@@ -70,14 +85,17 @@ public class UrlShortenerController {
             int responseCode = 400;
             Response response = Jsoup.connect(url_s).timeout(1000).userAgent("Mozilla").execute();
             responseCode = response.statusCode();
-            System.out.println("STCODE: " + responseCode);
+            //System.out.println("STCODE: " + responseCode);
             ret = responseCode == HttpURLConnection.HTTP_OK;
 
+        } catch (HttpStatusException e1){
+            e1.printStackTrace();
+            ret = false;
         } catch (UnknownHostException e2) {
             e2.printStackTrace();
             ret = false;
-        } catch (IOException e2) {
-            e2.printStackTrace();
+        } catch (IOException e3) {
+            e3.printStackTrace();
             ret = false;
         }
         return ret;
@@ -152,6 +170,8 @@ public class UrlShortenerController {
             if (sponsor != null && shortUrlService.findByKey(sponsor) != null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
+            url = final_url(url);
+            
             ShortURL su = shortUrlService.save(url, sponsor, request.getRemoteAddr());                                               
             HttpHeaders h = new HttpHeaders();
             h.setLocation(su.getUri());
