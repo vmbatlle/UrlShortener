@@ -43,15 +43,15 @@ import java.util.List;
 @Component
 public class APIAccess {
     @Value("${userstack.key}")
-    private static String userStackKey;
+    private String userStackKey;
 
-    public static List<String> extractInfoUserAgent(HttpServletRequest ua_request)
+    public List<String> extractInfoUserAgent(HttpServletRequest ua_request)
             throws MalformedURLException, IOException {
         OkHttpClient client = new OkHttpClient();
 
         String param2 = "e4edfb3090e960cd96d7a9df73acc622"; // API-KEY
         HttpUrl.Builder urlBuilder = HttpUrl.parse("http://api.userstack.com/detect?").newBuilder();
-        urlBuilder.addQueryParameter("access_key", param2);
+        urlBuilder.addQueryParameter("access_key", userStackKey);
         System.out.println("Key guardada en properties: " + userStackKey);
         urlBuilder.addQueryParameter("ua", ua_request.getHeader("User-Agent"));
         String url = urlBuilder.build().toString();

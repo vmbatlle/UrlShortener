@@ -58,12 +58,15 @@ public class UrlShortenerController {
 
     private final ClickService clickService;
 
+    private final APIAccess api_access;
+
     public static final int THROTTLING_GET_LIMIT = 10;
     public static final int THROTTLING_POST_LIMIT = 10;
 
-    public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService) {
+    public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService, APIAccess api) {
         this.shortUrlService = shortUrlService;
         this.clickService = clickService;
+        this.api_access = api;
     }
 
     private String final_url(String url) {
@@ -119,14 +122,14 @@ public class UrlShortenerController {
         if (l != null) {
             List<String> data = null;
             try {
-                data = APIAccess.extractInfoUserAgent(request);
+                data = api_access.extractInfoUserAgent(request);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             if(data != null){
-                clickService.saveClick2(id, extractIP(request), data.get(0), data.get(1), data.get(2), request.getHeader("referer"));
+                clickService.saveClickUserAgent(id, extractIP(request), data.get(0), data.get(1), data.get(2), request.getHeader("referer"));
             }
             else{
                 clickService.saveClick(id, extractIP(request));
@@ -152,11 +155,6 @@ public class UrlShortenerController {
         }
     }
 
-    /*@RequestMapping(value = "/all", method = RequestMethod.GET)
-    public List<Click> all(@RequestParam("page") Optional<Long> page,
-                        @RequestParam("size") Optional<Long> size) {
-        return clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 100));
-    }*/
 
     @GetMapping("/all")
     @RequestMapping(value = "/all", method = RequestMethod.GET)
