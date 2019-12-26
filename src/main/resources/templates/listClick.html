@@ -1,0 +1,49 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
+    <style>
+        table{width:100%;}
+        table td, table th { border: 1px solid grey;}
+        table th { background: #eee;}
+        .pagination-div{user-select: none;}
+        .pagination-div span{border-radius:3px;border:1px solid #999;
+           padding:5px;margin:10px 0px 0px 10px;display:inline-block}
+        span.selected{background:#ccf;}
+    </style>
+</head>
+<body>
+    <div layout:fragment="content">
+        <h2>Clicks</h2>
+        <table class="table table-bordered table-striped">
+          <thead>
+            <tr>
+              <td>ID</td>
+              <td>OS</td>
+              <td>Browser</td>
+              <td>Date</td>
+              <td>Referrer</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:if="${clicks.empty}">
+              <td colspan="4">No tasks</td>
+            </tr>
+            <tr th:each="click : ${clicks}">
+              <td th:text="${click.getId()}">Id</td>
+              <td th:text="${click.getPlatform()}">Os</td>
+              <td th:text="${click.getBrowser()}">Browser</td>
+              <td th:text="${click.getCreated()}">July 11, 2012 2:17:16 PM CDT</td>
+              <td th:text="${click.getReferrer()}">localhost</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <th:block th:each="i: ${#numbers.sequence(1, (pages+1))}">
+            <a th:href="@{/all(page=${i})}" th:text="${i}" class="btn">Button</a>
+        </th:block>
+      </div>
+</body>
+</html>
