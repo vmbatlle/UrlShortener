@@ -22,6 +22,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
+import urlshortener.service.UrlChecker;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -58,7 +59,8 @@ public class UrlShortenerController {
 
     private final ClickService clickService;
 
-    private final APIAccess api_access;
+    private UrlChecker urlchecker;
+    private final APIAccess api_acces;
 
     public static final int THROTTLING_GET_LIMIT = 10;
     public static final int THROTTLING_POST_LIMIT = 10;
@@ -66,7 +68,8 @@ public class UrlShortenerController {
     public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService, APIAccess api) {
         this.shortUrlService = shortUrlService;
         this.clickService = clickService;
-        this.api_access = api;
+        this.urlchecker = new UrlChecker(shortUrlService);
+        this.api_acces = api;
     }
 
     private String final_url(String url) {
@@ -122,7 +125,7 @@ public class UrlShortenerController {
         if (l != null) {
             List<String> data = null;
             try {
-                data = api_access.extractInfoUserAgent(request);
+                data = api_acces.extractInfoUserAgent(request);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -189,7 +192,7 @@ public class UrlShortenerController {
                                               @RequestParam(value = "sponsor", required = false) String sponsor,
                                               HttpServletRequest request) {
         UrlValidator urlValidator = new UrlValidator(new String[]{"http", "https"});
-        if (urlValidator.isValid(url) && isAccesible(url)) {
+        if (urlValidator.isValid(url) && urlchecker.isAccesible(url)) {
             if (sponsor != null && sponsor.equals("")) sponsor = null;
             if (sponsor != null && shortUrlService.findByKey(sponsor) != null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

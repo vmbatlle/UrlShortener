@@ -49,7 +49,7 @@ public class APIAccess {
             throws MalformedURLException, IOException {
         OkHttpClient client = new OkHttpClient();
 
-        String param2 = "e4edfb3090e960cd96d7a9df73acc622"; // API-KEY
+        //String param2 = "e4edfb3090e960cd96d7a9df73acc622"; // API-KEY
         HttpUrl.Builder urlBuilder = HttpUrl.parse("http://api.userstack.com/detect?").newBuilder();
         urlBuilder.addQueryParameter("access_key", userStackKey);
         System.out.println("Key guardada en properties: " + userStackKey);
