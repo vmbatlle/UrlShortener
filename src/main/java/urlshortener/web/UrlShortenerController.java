@@ -155,11 +155,6 @@ public class UrlShortenerController {
         }
     }
 
-    /*@RequestMapping(value = "/all", method = RequestMethod.GET)
-    public List<Click> all(@RequestParam("page") Optional<Long> page,
-                        @RequestParam("size") Optional<Long> size) {
-        return clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 100));
-    }*/
 
     @GetMapping("/all")
     @RequestMapping(value = "/all", method = RequestMethod.GET)
