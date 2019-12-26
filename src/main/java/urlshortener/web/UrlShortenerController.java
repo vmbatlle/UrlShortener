@@ -13,6 +13,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
+import urlshortener.service.UrlChecker;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -47,12 +48,15 @@ public class UrlShortenerController {
 
     private final ClickService clickService;
 
+    private UrlChecker urlchecker;
+
     public static final int THROTTLING_GET_LIMIT = 10;
     public static final int THROTTLING_POST_LIMIT = 10;
 
     public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService) {
         this.shortUrlService = shortUrlService;
         this.clickService = clickService;
+        this.urlchecker = new UrlChecker(shortUrlService);
     }
 
     private String final_url(String url) {
@@ -165,7 +169,7 @@ public class UrlShortenerController {
                                               @RequestParam(value = "sponsor", required = false) String sponsor,
                                               HttpServletRequest request) {
         UrlValidator urlValidator = new UrlValidator(new String[]{"http", "https"});
-        if (urlValidator.isValid(url) && isAccesible(url)) {
+        if (urlValidator.isValid(url) && urlchecker.isAccesible(url)) {
             if (sponsor != null && sponsor.equals("")) sponsor = null;
             if (sponsor != null && shortUrlService.findByKey(sponsor) != null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
