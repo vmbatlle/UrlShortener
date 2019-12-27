@@ -161,7 +161,7 @@ public class UrlShortenerController {
 
     @GetMapping("/all")
     @RequestMapping(value = "/all", method = RequestMethod.GET)
-    public ModelAndView all(/*Model model,*/ @RequestParam("page") Optional<Long> page,
+    public ModelAndView all(@RequestParam("page") Optional<Long> page,
                         @RequestParam("size") Optional<Long> size) {
         ModelAndView modelo = new ModelAndView("listClick");
         List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 5));
@@ -175,7 +175,7 @@ public class UrlShortenerController {
     
     @RequestMapping(value = "/download-data", method = RequestMethod.GET)
     public ResponseEntity<byte[]> download_all() {
-        String json = clickService.clicksRecived();
+        String json = clickService.clicksReceived();
         String fileName = "clicks.json";
         byte[] isr = json.getBytes();
         HttpHeaders respHeaders = new HttpHeaders();
