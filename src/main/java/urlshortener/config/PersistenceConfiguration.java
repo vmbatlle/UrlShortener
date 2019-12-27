@@ -3,12 +3,15 @@ package urlshortener.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
 import urlshortener.repository.ClickRepository;
 import urlshortener.repository.ShortURLRepository;
 import urlshortener.repository.impl.ClickRepositoryImpl;
 import urlshortener.repository.impl.ShortURLRepositoryImpl;
 
 @Configuration
+@EnableScheduling
 public class PersistenceConfiguration {
 
     private final JdbcTemplate jdbc;
