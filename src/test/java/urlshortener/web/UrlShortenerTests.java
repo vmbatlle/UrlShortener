@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import urlshortener.domain.ShortURL;
@@ -34,6 +35,9 @@ public class UrlShortenerTests {
 
     @Mock
     private ShortURLService shortUrlService;
+    
+    @Mock
+    private APIAccess api_acces;
 
     @InjectMocks
     private UrlShortenerController urlShortener;
@@ -42,6 +46,7 @@ public class UrlShortenerTests {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         this.mockMvc = MockMvcBuilders.standaloneSetup(urlShortener).build();
+        ReflectionTestUtils.setField(api_acces, "userStackKey", "e4edfb3090e960cd96d7a9df73acc622");
     }
 
     @Test

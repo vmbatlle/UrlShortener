@@ -52,7 +52,7 @@ public class APIAccess {
         //String param2 = "e4edfb3090e960cd96d7a9df73acc622"; // API-KEY
         HttpUrl.Builder urlBuilder = HttpUrl.parse("http://api.userstack.com/detect?").newBuilder();
         urlBuilder.addQueryParameter("access_key", userStackKey);
-        System.out.println("Key guardada en properties: " + userStackKey);
+        System.err.println("Key guardada en properties: " + userStackKey);
         urlBuilder.addQueryParameter("ua", ua_request.getHeader("User-Agent"));
         String url = urlBuilder.build().toString();
         //System.out.println("Url generada: " + url );
