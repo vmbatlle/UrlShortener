@@ -42,7 +42,7 @@ import java.util.List;
 
 @Component
 public class APIAccess {
-    @Value("${userstack.key}")
+    @Value("${userstack.key:0}")
     private String userStackKey;
 
     public List<String> extractInfoUserAgent(HttpServletRequest ua_request)

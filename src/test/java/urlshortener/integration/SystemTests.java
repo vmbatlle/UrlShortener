@@ -90,15 +90,15 @@ public class SystemTests {
 
     @Test
     public void AddExistingURIAfter301ToHttps() throws Exception {
-        ResponseEntity<String> entity = postLink("http://animeflv.net/");
+        ResponseEntity<String> entity = postLink("http://goo.gl/fb/gyBkwR/");
 
         assertThat(entity.getStatusCode(), is(HttpStatus.CREATED));
-        assertThat(entity.getHeaders().getLocation(), is(new URI("http://localhost:" + this.port + "/6972dee0")));
+        assertThat(entity.getHeaders().getLocation(), is(new URI("http://localhost:" + this.port + "/9a2911b4")));
         assertThat(entity.getHeaders().getContentType(), is(new MediaType("application", "json", StandardCharsets.UTF_8)));
         ReadContext rc = JsonPath.parse(entity.getBody());
-        assertThat(rc.read("$.hash"), is("6972dee0"));
-        assertThat(rc.read("$.uri"), is("http://localhost:" + this.port + "/6972dee0"));
-        assertThat(rc.read("$.target"), is("https://animeflv.net/"));
+        assertThat(rc.read("$.hash"), is("9a2911b4"));
+        assertThat(rc.read("$.uri"), is("http://localhost:" + this.port + "/9a2911b4"));
+        assertThat(rc.read("$.target"), is("https://www.mkyong.com/mongodb/mongodb-remove-a-field-from-array-documents/"));
     }
 
     @Test
