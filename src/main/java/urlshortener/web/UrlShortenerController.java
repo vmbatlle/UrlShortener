@@ -132,7 +132,6 @@ public class UrlShortenerController {
                 e.printStackTrace();
             }
             if(data != null && !data.isEmpty()){
-                System.err.println(data.toString()+ " !!!!!!!!!!!!!!!!!!!!!");
                 clickService.saveClickUserAgent(id, extractIP(request), data.get(0), data.get(1), data.get(2), request.getHeader("referer"));
             }
             else{
