@@ -28,6 +28,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,30 +68,30 @@ public class UrlChecker {
             // ret = ret && ( responseCode == HttpURLConnection.HTTP_OK);
             
             int responseCode = 400;
-            Response response = Jsoup.connect(url_s).timeout(1000).userAgent("Mozilla").execute();
+            Response response = Jsoup.connect(url_s).timeout(1000)
+                                                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:71.0) Gecko/20100101 Firefox/71.0")
+                                                    .execute();
             responseCode = response.statusCode();
             //System.out.println("STCODE: " + responseCode);
             ret = responseCode == HttpURLConnection.HTTP_OK;
 
-        } catch (HttpStatusException e1){
+        } catch (IOException e1){
             e1.printStackTrace();
             ret = false;
-        } catch (UnknownHostException e2) {
-            e2.printStackTrace();
-            ret = false;
-        } catch (IOException e3) {
-            e3.printStackTrace();
-            ret = false;
-        }
+        } 
         return ret;
     }
 
     @Scheduled(fixedDelay = 10000)
     private void periodicCheck() {
+        List<String> to_delete = new LinkedList<String>();
         for (ShortURL url : list) {
             if (!isAccesible(url.getUri().toString())) {
-                //Marcar como no accesible?
+                to_delete.add(url.getHash());
             }
+        }
+        for (String id : to_delete) {
+            shortUrlService.delete(id);
         }
     }
         

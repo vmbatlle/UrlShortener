@@ -23,6 +23,10 @@ public class ShortURLService {
         return shortURLRepository.findByKey(id);
     }
 
+    public void delete(String id) {
+        shortURLRepository.delete(id);
+    }
+
     public List<ShortURL> all() {
         long limit = shortURLRepository.count();
         return shortURLRepository.list(limit, 0L);

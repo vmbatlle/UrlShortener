@@ -46,7 +46,7 @@ public class ClickService {
         return clickRepository.count();
     }
     
-    public String clicksRecived(){
+    public String clicksReceived(){
         // TODO: Use future parameters for escalability
         // long lim = 100;
         // long off = 0;

@@ -86,38 +86,6 @@ public class UrlShortenerController {
         return response.url().toString();
     }
 
-    private boolean isAccesible(String url_s) {
-        boolean ret = false;
-        try {
-            // ret = InetAddress.getByName(new URL(url_s).getHost()).isReachable(1000);
-            // int responseCode = 400;
-            // URL url = new URL(url_s);
-            // HttpURLConnection huc = (HttpURLConnection) url.openConnection();
-            // huc.setRequestMethod("HEAD");
-            // huc.setConnectTimeout(1000);
-            // huc.setReadTimeout(1000);
-            // responseCode = huc.getResponseCode();
-            // ret = ret && ( responseCode == HttpURLConnection.HTTP_OK);
-            
-            int responseCode = 400;
-            Response response = Jsoup.connect(url_s).timeout(1000).userAgent("Mozilla").execute();
-            responseCode = response.statusCode();
-            //System.out.println("STCODE: " + responseCode);
-            ret = responseCode == HttpURLConnection.HTTP_OK;
-
-        } catch (HttpStatusException e1){
-            e1.printStackTrace();
-            ret = false;
-        } catch (UnknownHostException e2) {
-            e2.printStackTrace();
-            ret = false;
-        } catch (IOException e3) {
-            e3.printStackTrace();
-            ret = false;
-        }
-        return ret;
-    }
-
 @RequestMapping(value = {"/{id:(?!link|index).*}","/{id:(?!link|index|webjars|js|bootstrap)[a-z0-9]*}/**"}, method = RequestMethod.GET)
     @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<?> redirectTo(@PathVariable String id, HttpServletRequest request) {
@@ -131,7 +99,7 @@ public class UrlShortenerController {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(data != null){
+            if(data != null && !data.isEmpty()){
                 clickService.saveClickUserAgent(id, extractIP(request), data.get(0), data.get(1), data.get(2), request.getHeader("referer"));
             }
             else{
@@ -158,15 +126,10 @@ public class UrlShortenerController {
         }
     }
 
-    /*@RequestMapping(value = "/all", method = RequestMethod.GET)
-    public List<Click> all(@RequestParam("page") Optional<Long> page,
-                        @RequestParam("size") Optional<Long> size) {
-        return clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 100));
-    }*/
 
     @GetMapping("/all")
     @RequestMapping(value = "/all", method = RequestMethod.GET)
-    public ModelAndView all(/*Model model,*/ @RequestParam("page") Optional<Long> page,
+    public ModelAndView all(@RequestParam("page") Optional<Long> page,
                         @RequestParam("size") Optional<Long> size) {
         ModelAndView modelo = new ModelAndView("listClick");
         List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 5));
@@ -180,7 +143,7 @@ public class UrlShortenerController {
     
     @RequestMapping(value = "/download-data", method = RequestMethod.GET)
     public ResponseEntity<byte[]> download_all() {
-        String json = clickService.clicksRecived();
+        String json = clickService.clicksReceived();
         String fileName = "clicks.json";
         byte[] isr = json.getBytes();
         HttpHeaders respHeaders = new HttpHeaders();
