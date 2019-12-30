@@ -15,6 +15,7 @@ import java.net.URI;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,6 +23,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 import static org.hamcrest.Matchers.nullValue;
@@ -45,10 +47,13 @@ public class UrlShortenerTests3 {
     @MockBean
     private ShortURLService shortUrlService;
 
-
+    @Mock
+    private APIAccess api_acces;
+    
     @Before
     public void setup() {
         this.mockMvc = webAppContextSetup(webApplicationContext).build();
+        ReflectionTestUtils.setField(api_acces, "userStackKey", "e4edfb3090e960cd96d7a9df73acc622");
     }
 
     @Test
@@ -95,7 +100,7 @@ public class UrlShortenerTests3 {
     public void AddNotReachableURI() throws Exception {
         configureSave(null);
 
-        mockMvc.perform(post("/link").param("url", "http://notawebpage.com/"))
+        mockMvc.perform(post("/link").param("url", "http://notawebpage2.com/"))
         .andDo(print())
         .andExpect(status().isBadRequest());
     }

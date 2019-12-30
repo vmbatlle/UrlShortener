@@ -42,7 +42,7 @@ import java.util.List;
 
 @Component
 public class APIAccess {
-    @Value("${userstack.key}")
+    @Value("${userstack.key:0}")
     private String userStackKey;
 
     public List<String> extractInfoUserAgent(HttpServletRequest ua_request)
@@ -52,7 +52,7 @@ public class APIAccess {
         //String param2 = "e4edfb3090e960cd96d7a9df73acc622"; // API-KEY
         HttpUrl.Builder urlBuilder = HttpUrl.parse("http://api.userstack.com/detect?").newBuilder();
         urlBuilder.addQueryParameter("access_key", userStackKey);
-        System.out.println("Key guardada en properties: " + userStackKey);
+        //System.err.println("Key guardada en properties: " + userStackKey);
         urlBuilder.addQueryParameter("ua", ua_request.getHeader("User-Agent"));
         String url = urlBuilder.build().toString();
         //System.out.println("Url generada: " + url );
@@ -72,7 +72,7 @@ public class APIAccess {
             data.add(JsonPath.read(document, "$['device']['type']"));
             data.add(JsonPath.read(document, "$['browser']['name']"));
         }catch(Exception e){
-            System.err.println("Ha fallado JsonPath............................!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            //System.err.println("Ha fallado JsonPath............................!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
             data.add("fallo");
             data.add("fallo");
             data.add("fallo");
