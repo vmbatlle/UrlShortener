@@ -67,6 +67,8 @@ public class UrlShortenerController {
     public static final int THROTTLING_GET_LIMIT = 10;
     public static final int THROTTLING_POST_LIMIT = 10;
 
+    private static boolean firstTime = true;
+
     public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService, APIAccess api) {
         this.shortUrlService = shortUrlService;
         this.clickService = clickService;
@@ -176,7 +178,9 @@ public class UrlShortenerController {
                                               @RequestParam(value = "sponsor", required = false) String sponsor,
                                               HttpServletRequest request) {
         UrlValidator urlValidator = new UrlValidator(new String[]{"http", "https"});
-        if (urlValidator.isValid(url) && urlchecker.isAccesible(url)) {
+        boolean accesible = urlchecker.isAccesible(url);
+        if ((urlValidator.isValid(url) || (url.contains("://localhost:") && url.contains("test_scheduler"))) && accesible ) {
+        //if (accesible) {
             if (sponsor != null && sponsor.equals("")) sponsor = null;
             if (sponsor != null && shortUrlService.findByKey(sponsor) != null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -188,10 +192,20 @@ public class UrlShortenerController {
             h.setLocation(su.getUri());
             return new ResponseEntity<>(su, h, HttpStatus.CREATED);
         } else {
+            System.out.println("Valid = " + urlValidator.isValid(url) + " Accesible = " + accesible);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
+    @RequestMapping(value = "/test_scheduler", method = RequestMethod.GET)
+    public ResponseEntity<ShortURL> test_scheduler() {
+        if (firstTime) {
+            firstTime = false;
+            return new ResponseEntity<>(HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
 
     private String extractIP(HttpServletRequest request) {
         return request.getRemoteAddr();

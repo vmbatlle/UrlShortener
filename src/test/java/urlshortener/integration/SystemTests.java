@@ -15,6 +15,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -89,7 +90,7 @@ public class SystemTests {
     }
 
     @Test
-    public void AddExistingURIAfter301ToHttps() throws Exception {
+    public void AddExistingURIAfter301ToRedirect() throws Exception {
         ResponseEntity<String> entity = postLink("http://goo.gl/fb/gyBkwR/");
 
         assertThat(entity.getStatusCode(), is(HttpStatus.CREATED));
@@ -100,6 +101,22 @@ public class SystemTests {
         assertThat(rc.read("$.uri"), is("http://localhost:" + this.port + "/9a2911b4"));
         assertThat(rc.read("$.target"), is("https://www.mkyong.com/mongodb/mongodb-remove-a-field-from-array-documents/"));
     }
+
+    @Test
+    public void DeleteDisabledUrisAfterTime() throws Exception {
+        ResponseEntity<String> entity = postLink("http://localhost:" + this.port + "/test_scheduler");
+        assertThat(entity.getStatusCode(), is(HttpStatus.CREATED));
+        ReadContext rc = JsonPath.parse(entity.getBody());
+        //assertThat(rc.read("$.hash"), is("571a4332"));
+
+        String hash = rc.read("$.hash");
+
+        Thread.sleep(2000);
+
+        ResponseEntity<String> entity2 = restTemplate.getForEntity("/"+ hash, String.class);
+        assertThat(entity2.getStatusCode(), is(HttpStatus.NOT_FOUND));
+    }
+
 
     @Test
     public void testRedirectionSponsor() throws Exception {

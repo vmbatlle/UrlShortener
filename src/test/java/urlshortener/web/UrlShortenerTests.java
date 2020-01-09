@@ -102,7 +102,7 @@ public class UrlShortenerTests {
     public void thatShortenerFailsIfTheURLisWrong() throws Exception {
         configureSave(null);
 
-        mockMvc.perform(post("/link").param("url", "someKey")).andDo(print())
+        mockMvc.perform(post("/link").param("url", "http://authority")).andDo(print())
                 .andExpect(status().isBadRequest());
     }
 
@@ -111,7 +111,7 @@ public class UrlShortenerTests {
         when(shortUrlService.save(any(String.class), any(String.class), any(String.class)))
                 .thenReturn(null);
 
-        mockMvc.perform(post("/link").param("url", "someKey")).andDo(print())
+        mockMvc.perform(post("/link").param("url", "http://authority")).andDo(print())
                 .andExpect(status().isBadRequest());
     }
 

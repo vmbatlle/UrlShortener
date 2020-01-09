@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +24,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -43,6 +45,7 @@ import com.weddini.throttling.Throttling;
 import com.weddini.throttling.ThrottlingType;
 import java.util.concurrent.TimeUnit;
 
+@Component
 public class UrlChecker {
 
     private List<ShortURL> list;
@@ -50,7 +53,6 @@ public class UrlChecker {
     private ShortURLService shortUrlService;
 
     public UrlChecker(ShortURLService shortUrlService) {
-        this.list = shortUrlService.all();
         this.shortUrlService = shortUrlService;
     }
 
@@ -82,11 +84,12 @@ public class UrlChecker {
         return ret;
     }
 
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 1000)
     private void periodicCheck() {
+        System.out.println("HOLAAAAAAAAAAAAA");
         List<String> to_delete = new LinkedList<String>();
-        for (ShortURL url : list) {
-            if (!isAccesible(url.getUri().toString())) {
+        for (ShortURL url : shortUrlService.all()) {
+            if (!isAccesible(url.getTarget())) {
                 to_delete.add(url.getHash());
             }
         }
