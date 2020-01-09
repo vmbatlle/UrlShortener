@@ -12,9 +12,12 @@ import org.springframework.stereotype.Repository;
 import urlshortener.domain.Click;
 import urlshortener.repository.ClickRepository;
 
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Types;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 
@@ -45,6 +48,30 @@ public class ClickRepositoryImpl implements ClickRepository {
             log.debug("When select for hash " + hash, e);
             return Collections.emptyList();
         }
+    }
+    
+    @Override
+    public List<Click> findByDate(LocalDateTime time, Long limit, Long offset) {
+        try {
+            Date date = java.sql.Date.valueOf(time.toLocalDate());
+            return jdbc.query("SELECT * FROM click WHERE created>=? LIMIT ? OFFSET ?",
+                    new Object[]{date, limit, offset}, rowMapper);
+        } catch (Exception e) {
+            log.debug("When select for time " + time, e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public Long countByDate(LocalDateTime time){
+        try {
+            Date date = java.sql.Date.valueOf(time.toLocalDate());
+            return jdbc
+                    .queryForObject("select count(*) from click WHERE created>=?", new Object[]{date}, Long.class);
+        } catch (Exception e) {
+            log.debug("When counting", e);
+        }
+        return -1L;
     }
 
     @Override

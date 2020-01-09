@@ -2,6 +2,7 @@ package urlshortener.web;
 
 import org.apache.commons.validator.routines.UrlValidator;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,7 +18,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.HandlerMapping;
-
 
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
@@ -35,6 +35,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.sql.Date;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -130,15 +132,29 @@ public class UrlShortenerController {
     @GetMapping("/all")
     @RequestMapping(value = "/all", method = RequestMethod.GET)
     public ModelAndView all(@RequestParam("page") Optional<Long> page,
-                        @RequestParam("size") Optional<Long> size) {
+                        @RequestParam("size") Optional<Long> size,
+                        @RequestParam("start") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Optional<LocalDateTime> start,
+                        @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Optional<LocalDateTime> end) {
+
         ModelAndView modelo = new ModelAndView("listClick");
-        List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 5));
-        modelo.addObject("clicks", lc);
-        Long count = clickService.count();
-        modelo.addObject("pages", (int) (count / size.orElse((long) 5)));
-        modelo.addObject("page", page.orElse((long) 1));
-        System.out.println("Pagina actual: " + page.orElse((long) 1) + " Paginas: " + (count / size.orElse((long) 5)) );
+        if(!start.isPresent()){
+            List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 5));
+            modelo.addObject("clicks", lc);
+            Long count = clickService.count();
+            modelo.addObject("pages", (int) (count / size.orElse((long) 5)));
+            modelo.addObject("page", page.orElse((long) 1));
+            modelo.addObject("start", start.orElse(LocalDateTime.parse("2019-12-30T08:30")));
+        }else{
+            List<Click> lc = clickService.clicksReceivedDated(start.orElse(LocalDateTime.now()), page.orElse((long) 1), size.orElse((long) 5));
+            modelo.addObject("clicks", lc);
+            Long count = clickService.countByDate(start.orElse(LocalDateTime.now()));
+            modelo.addObject("pages", (int) (count / size.orElse((long) 5)));
+            modelo.addObject("page", page.orElse((long) 1));
+            modelo.addObject("start", start.orElse(LocalDateTime.parse("2019-12-30T08:30")));
+        }
+        System.out.println("ventana actual: " + start.orElse(null) + ", " + end.orElse(null));
         return modelo;
+
     }
     
     @RequestMapping(value = "/download-data", method = RequestMethod.GET)

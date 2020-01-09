@@ -10,6 +10,7 @@ import urlshortener.repository.ClickRepository;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -37,13 +38,19 @@ public class ClickService {
     }
 
     public List<Click> clicksReceived(long pag, long lim){
-        //long off = 0;
-        //long lim = 100;
         return clickRepository.list(lim, (pag - 1)*lim);
+    }
+    
+    public List<Click> clicksReceivedDated(LocalDateTime time, long pag, long lim){
+        return clickRepository.findByDate(time, lim, (pag - 1)*lim);
     }
 
     public Long count(){
         return clickRepository.count();
+    }
+    
+    public Long countByDate(LocalDateTime time){
+        return clickRepository.countByDate(time);
     }
     
     public String clicksReceived(){

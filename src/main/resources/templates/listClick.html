@@ -14,6 +14,13 @@
     </style>
 </head>
 <body>
+    <div>
+      <form th:action="@{/all}" th:object="${start}" method="get">
+        <label for="start">Enter start:</label>
+        <input id="start" type="datetime-local" name="start" th:value="${start}">
+        <button type="submit">Select Date</button>
+     </form>
+    </div>
     <div layout:fragment="content">
         <h2>Clicks</h2>
         <table class="table table-bordered table-striped">
@@ -42,7 +49,7 @@
       </div>
       <div>
         <th:block th:each="i: ${#numbers.sequence(1, (pages+1))}">
-            <a th:href="@{/all(page=${i})}" th:text="${i}" class="btn">Button</a>
+            <a th:href="@{/all(page=${i},start=${start},end=${end})}" th:text="${i}" class="btn">Button</a>
         </th:block>
       </div>
 </body>
