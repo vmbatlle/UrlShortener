@@ -54,7 +54,9 @@ import org.jsoup.Jsoup;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.util.concurrent.RateLimiter;
 import com.weddini.throttling.Throttling;
+import com.weddini.throttling.ThrottlingException;
 import com.weddini.throttling.ThrottlingType;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -74,16 +76,20 @@ public class UrlShortenerController {
     private final CacheLoader<Long, Click> loader;
     private final LoadingCache<Long, Click> cache;
 
-    public static final int THROTTLING_GET_LIMIT = 10;
-    public static final int THROTTLING_POST_LIMIT = 10;
+    /** All throttling units are requests per minute */
+    public static final int THROTTLING_GET_LIMIT_PER_ADDR = 10;
+    public static final int THROTTLING_POST_LIMIT_PER_ADDR = 10;
+    public GlobalThrottling globalThrottling;
 
     private static boolean firstTime = true;
 
-    public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService, APIAccess api) {
+    public UrlShortenerController(ShortURLService shortUrlService, 
+            ClickService clickService, APIAccess api, GlobalThrottling gt) {
         this.shortUrlService = shortUrlService;
         this.clickService = clickService;
         this.urlchecker = new UrlChecker(shortUrlService);
         this.api_acces = api;
+        this.globalThrottling = gt;
 
         loader = new CacheLoader<Long, Click>() {
             @Override
@@ -115,9 +121,10 @@ public class UrlShortenerController {
         return response.url().toString();
     }
 
-@RequestMapping(value = {"/{id:(?!link|index).*}","/{id:(?!link|index|webjars|js|bootstrap)[a-z0-9]*}/**"}, method = RequestMethod.GET)
-    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT, timeUnit = TimeUnit.MINUTES)
+    @RequestMapping(value = {"/{id:(?!link|index).*}","/{id:(?!link|index|webjars|js|bootstrap)[a-z0-9]*}/**"}, method = RequestMethod.GET)
+    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT_PER_ADDR, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<?> redirectTo(@PathVariable String id, HttpServletRequest request) {
+        if (!globalThrottling.acquireGet()) throw new ThrottlingException();
         ShortURL l = shortUrlService.findByKey(id);
         if (l != null) {
             List<String> data = null;
@@ -211,10 +218,11 @@ public class UrlShortenerController {
     }
 
     @RequestMapping(value = "/link", method = RequestMethod.POST)
-    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_POST_LIMIT, timeUnit = TimeUnit.MINUTES)
+    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_POST_LIMIT_PER_ADDR, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<ShortURL> shortener(@RequestParam("url") String url,
                                               @RequestParam(value = "sponsor", required = false) String sponsor,
                                               HttpServletRequest request) {
+        if (!globalThrottling.acquirePost()) throw new ThrottlingException();
         UrlValidator urlValidator = new UrlValidator(new String[]{"http", "https"});
         boolean accesible = urlchecker.isAccesible(url);
         if ((urlValidator.isValid(url) || (url.contains("://localhost:") && url.contains("test_scheduler"))) && accesible ) {

@@ -41,6 +41,9 @@ public class UrlShortenerTests {
     @Mock
     private APIAccess api_acces;
 
+    @Mock
+    private GlobalThrottling globalThrottling;
+
     @InjectMocks
     private UrlShortenerController urlShortener;
 
@@ -66,6 +69,7 @@ public class UrlShortenerTests {
     @Test
     public void thatRedirecToReturnsNotFoundIdIfKeyDoesNotExist()
             throws Exception {
+        configureSave(null);
         when(shortUrlService.findByKey("someKey")).thenReturn(null);
 
         mockMvc.perform(get("/{id}", "someKey")).andDo(print())
@@ -112,6 +116,7 @@ public class UrlShortenerTests {
 
     @Test
     public void thatShortenerFailsIfTheRepositoryReturnsNull() throws Exception {
+        configureSave(null);
         when(shortUrlService.save(any(String.class), any(String.class), any(String.class)))
                 .thenReturn(null);
 
@@ -137,5 +142,8 @@ public class UrlShortenerTests {
                 .then((Answer<Click>) invocation -> new Click((long) 1, null, null, null, null,
                                                 null, null, null
                         ));
+
+        when(globalThrottling.acquireGet()).then(invocation -> true);
+        when(globalThrottling.acquirePost()).then(invocation -> true);
     }
 }
