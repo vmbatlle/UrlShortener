@@ -15,6 +15,7 @@ import urlshortener.repository.ClickRepository;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -29,7 +30,7 @@ public class ClickRepositoryImpl implements ClickRepository {
             .getLogger(ClickRepositoryImpl.class);
 
     private static final RowMapper<Click> rowMapper = (rs, rowNum) -> new Click(rs.getLong("id"), rs.getString("hash"),
-            rs.getDate("created"), rs.getString("referrer"),
+            rs.getTimestamp("created"), rs.getString("referrer"),
             rs.getString("browser"), rs.getString("platform"),
             rs.getString("ip"), rs.getString("country"));
 
@@ -53,8 +54,9 @@ public class ClickRepositoryImpl implements ClickRepository {
     @Override
     public List<Click> findByDate(LocalDateTime time, Long limit, Long offset) {
         try {
-            Date date = java.sql.Date.valueOf(time.toLocalDate());
-            return jdbc.query("SELECT * FROM click WHERE created>=? LIMIT ? OFFSET ?",
+            // Date date = java.sql.Date.valueOf(time.toLocalDate());
+            Timestamp date = Timestamp.from(time.atZone(ZoneId.systemDefault()).toInstant());
+            return jdbc.query("SELECT * FROM click WHERE created>=? ORDER BY id DESC LIMIT ? OFFSET ?",
                     new Object[]{date, limit, offset}, rowMapper);
         } catch (Exception e) {
             log.debug("When select for time " + time, e);
@@ -85,7 +87,7 @@ public class ClickRepositoryImpl implements ClickRepository {
                                 Statement.RETURN_GENERATED_KEYS);
                 ps.setNull(1, Types.BIGINT);
                 ps.setString(2, cl.getHash());
-                ps.setDate(3, cl.getCreated());
+                ps.setTimestamp(3, cl.getCreated());
                 ps.setString(4, cl.getReferrer());
                 ps.setString(5, cl.getBrowser());
                 ps.setString(6, cl.getPlatform());
@@ -156,7 +158,7 @@ public class ClickRepositoryImpl implements ClickRepository {
     @Override
     public List<Click> list(Long limit, Long offset) {
         try {
-            return jdbc.query("SELECT * FROM click LIMIT ? OFFSET ?",
+            return jdbc.query("SELECT * FROM click ORDER BY id DESC LIMIT ? OFFSET ?",
                     new Object[]{limit, offset}, rowMapper);
         } catch (Exception e) {
             log.debug("When select for limit " + limit + " and offset "

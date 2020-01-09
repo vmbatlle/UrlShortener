@@ -10,6 +10,8 @@ import org.mockito.stubbing.Answer;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import urlshortener.domain.Click;
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
@@ -53,6 +55,8 @@ public class UrlShortenerTests {
     public void thatRedirectToReturnsTemporaryRedirectIfKeyExists()
             throws Exception {
         when(shortUrlService.findByKey("someKey")).thenReturn(someUrl());
+
+        configureSave(null);
 
         mockMvc.perform(get("/{id}", "someKey")).andDo(print())
                 .andExpect(status().isTemporaryRedirect())
@@ -128,5 +132,10 @@ public class UrlShortenerTests {
                         false,
                         null,
                         null));
+        
+        when(clickService.saveClick(any(), any()))
+                .then((Answer<Click>) invocation -> new Click((long) 1, null, null, null, null,
+                                                null, null, null
+                        ));
     }
 }
