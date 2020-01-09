@@ -51,18 +51,28 @@ import org.jsoup.Connection.Response;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.weddini.throttling.Throttling;
 import com.weddini.throttling.ThrottlingType;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @RestController
 public class UrlShortenerController {
+
+    private static int defaultPageSize = 100;
+
     private final ShortURLService shortUrlService;
 
     private final ClickService clickService;
 
     private UrlChecker urlchecker;
     private final APIAccess api_acces;
+
+    private final CacheLoader<Long, Click> loader;
+    private final LoadingCache<Long, Click> cache;
 
     public static final int THROTTLING_GET_LIMIT = 10;
     public static final int THROTTLING_POST_LIMIT = 10;
@@ -72,6 +82,21 @@ public class UrlShortenerController {
         this.clickService = clickService;
         this.urlchecker = new UrlChecker(shortUrlService);
         this.api_acces = api;
+
+        loader = new CacheLoader<Long, Click>() {
+            @Override
+            public Click load(Long key) {
+                return new Click(null, null, null, null, null, null, null, null);
+            }
+        };
+
+        cache = CacheBuilder.newBuilder().maximumSize(10).build(loader);
+
+        List<Click> lc = clickService.clicksReceived(1, defaultPageSize);
+
+        for(Click c : lc){
+            cache.put(c.getId(), c);
+        }
     }
 
     private String final_url(String url) {
@@ -101,12 +126,19 @@ public class UrlShortenerController {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            Click cl = null;
             if(data != null && !data.isEmpty()){
-                clickService.saveClickUserAgent(id, extractIP(request), data.get(0), data.get(1), data.get(2), request.getHeader("referer"));
+                cl = clickService.saveClickUserAgent(id, extractIP(request), data.get(0), data.get(1), data.get(2), request.getHeader("referer"));
             }
             else{
-                clickService.saveClick(id, extractIP(request));
+                cl = clickService.saveClick(id, extractIP(request));
             }
+
+            //Inserting into cache
+            System.err.println("Click:  " + cl);
+            cache.put(cl.getId(),cl);
+            System.err.println("Click:  " + cl);
+
             Map<String, String[]> params_map = request.getParameterMap();
             Set<String> params_keys = params_map.keySet();
 
@@ -138,8 +170,14 @@ public class UrlShortenerController {
 
         ModelAndView modelo = new ModelAndView("listClick");
         if(!start.isPresent()){
-            List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 5));
-            modelo.addObject("clicks", lc);
+            if(page.orElse((long) 1) != 1){
+                List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 5));
+                modelo.addObject("clicks", lc);
+            } else {
+                System.out.println("Cogiendo valores de cache.....");
+                List<Click> lc = cache.asMap().values().stream().collect(Collectors.toList());
+                modelo.addObject("clicks", lc);
+            }
             Long count = clickService.count();
             modelo.addObject("pages", (int) (count / size.orElse((long) 5)));
             modelo.addObject("page", page.orElse((long) 1));
