@@ -90,7 +90,7 @@ public class UrlShortenerController {
             }
         };
 
-        cache = CacheBuilder.newBuilder().maximumSize(10).build(loader);
+        cache = CacheBuilder.newBuilder().maximumSize(defaultPageSize).build(loader);
 
         List<Click> lc = clickService.clicksReceived(1, defaultPageSize);
 
