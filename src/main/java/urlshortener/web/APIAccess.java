@@ -1,40 +1,20 @@
 package urlshortener.web;
 
-import org.apache.commons.validator.routines.UrlValidator;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-//import org.springframework.http.MediaType;
-//import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-//import org.springframework.web.bind.annotation.*;
-
-import urlshortener.domain.Click;
-import urlshortener.domain.ShortURL;
-import urlshortener.service.ClickService;
-import urlshortener.service.ShortURLService;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.ResponseBody;
-import com.squareup.okhttp.Response;
 import com.squareup.okhttp.HttpUrl;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 
 import java.util.ArrayList;
 import java.util.List;

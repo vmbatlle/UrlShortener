@@ -1,14 +1,12 @@
 package urlshortener.web;
 
 import org.apache.commons.validator.routines.UrlValidator;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -16,7 +14,6 @@ import urlshortener.domain.Click;
 
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.HandlerMapping;
 
 import urlshortener.domain.ShortURL;
@@ -26,26 +23,16 @@ import urlshortener.service.UrlChecker;
 
 import javax.servlet.http.HttpServletRequest;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.sql.Date;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import java.util.Optional;
 import java.util.Map;
 import java.util.Set;
-
-import org.json.JSONObject;
 
 import org.jsoup.Connection.Response;
 import org.jsoup.HttpStatusException;
@@ -54,7 +41,6 @@ import org.jsoup.Jsoup;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.util.concurrent.RateLimiter;
 import com.weddini.throttling.Throttling;
 import com.weddini.throttling.ThrottlingException;
 import com.weddini.throttling.ThrottlingType;

@@ -1,54 +1,21 @@
 package urlshortener.service;
 
-import org.apache.commons.validator.routines.UrlValidator;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.HandlerMapping;
 
 import urlshortener.domain.ShortURL;
-import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
 
-import javax.servlet.http.HttpServletRequest;
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
-import java.net.URI;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.json.JSONObject;
 
 import org.jsoup.Connection.Response;
-import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
-
-import com.weddini.throttling.Throttling;
-import com.weddini.throttling.ThrottlingType;
-import java.util.concurrent.TimeUnit;
 
 @Component
 public class UrlChecker {
-
-    private List<ShortURL> list;
 
     private ShortURLService shortUrlService;
 
