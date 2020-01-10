@@ -53,7 +53,6 @@ public class UrlChecker {
 
     @Scheduled(fixedDelay = 1000)
     private void periodicCheck() {
-        System.out.println("HOLAAAAAAAAAAAAA");
         List<String> to_delete = new LinkedList<String>();
         for (ShortURL url : shortUrlService.all()) {
             if (!isAccesible(url.getTarget())) {

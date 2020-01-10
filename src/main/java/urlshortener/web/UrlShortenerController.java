@@ -66,16 +66,19 @@ public class UrlShortenerController {
     public static final int THROTTLING_GET_LIMIT_PER_ADDR = 10;
     public static final int THROTTLING_POST_LIMIT_PER_ADDR = 10;
     public GlobalThrottling globalThrottling;
+    public URIThrotlling uriThrottling;
 
     private static boolean firstTime = true;
 
     public UrlShortenerController(ShortURLService shortUrlService, 
-            ClickService clickService, APIAccess api, GlobalThrottling gt) {
+            ClickService clickService, APIAccess api, GlobalThrottling gt,
+            URIThrotlling ut) {
         this.shortUrlService = shortUrlService;
         this.clickService = clickService;
         this.urlchecker = new UrlChecker(shortUrlService);
         this.api_acces = api;
         this.globalThrottling = gt;
+        this.uriThrottling = ut;
 
         loader = new CacheLoader<Long, Click>() {
             @Override
@@ -111,6 +114,7 @@ public class UrlShortenerController {
     @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT_PER_ADDR, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<?> redirectTo(@PathVariable String id, HttpServletRequest request) {
         if (!globalThrottling.acquireGet()) throw new ThrottlingException();
+        if (!uriThrottling.acquire(id)) throw new ThrottlingException();
         ShortURL l = shortUrlService.findByKey(id);
         if (l != null) {
             List<String> data = null;
@@ -130,9 +134,7 @@ public class UrlShortenerController {
             }
 
             //Inserting into cache
-            System.err.println("Click:  " + cl);
             cache.put(cl.getId(),cl);
-            System.err.println("Click:  " + cl);
 
             Map<String, String[]> params_map = request.getParameterMap();
             Set<String> params_keys = params_map.keySet();

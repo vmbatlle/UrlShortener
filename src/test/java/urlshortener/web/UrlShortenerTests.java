@@ -37,6 +37,9 @@ public class UrlShortenerTests {
 
     @Mock
     private ShortURLService shortUrlService;
+
+    @Mock
+    private URIThrotlling uriThrotlling;
     
     @Mock
     private APIAccess api_acces;
@@ -145,5 +148,6 @@ public class UrlShortenerTests {
 
         when(globalThrottling.acquireGet()).then(invocation -> true);
         when(globalThrottling.acquirePost()).then(invocation -> true);
+        when(uriThrotlling.acquire(any())).then(invocation -> true);
     }
 }

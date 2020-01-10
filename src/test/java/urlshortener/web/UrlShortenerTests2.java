@@ -42,12 +42,16 @@ public class UrlShortenerTests2 {
     private MockMvc mockMvc;
 
     private static final Integer RATE_GLOBAL_THROTTLING = 15;
+    private static final Integer RATE_URI_THROTTLING = 15;
 
     @Autowired
     private WebApplicationContext webApplicationContext;
 
     @Autowired
     private GlobalThrottling globalThrottling;
+
+    @Autowired
+    private URIThrotlling uriThrotlling;
 
     @MockBean
     private ClickService clickService;
@@ -64,9 +68,15 @@ public class UrlShortenerTests2 {
     @Value("${throttling.global.post.rate}")
     private Integer globalThrottlingRatePost;
 
+    @Value("${throttling.uri.rate}")
+    private Integer uriThrottlingRate;
+
     @Before
     public void setup() {
         if (!runThrottlingTests) return;
+        this.globalThrottling.setThrottlingGet(globalThrottlingRateGet);
+        this.globalThrottling.setThrottlingPost(globalThrottlingRatePost);
+        this.uriThrotlling.setThrottling(uriThrottlingRate);
         this.mockMvc = webAppContextSetup(webApplicationContext).build();
         if (globalThrottlingRateGet == null) {
                 globalThrottlingRateGet = GlobalThrottling.DEFAULT_RATE_GET;
@@ -94,7 +104,7 @@ public class UrlShortenerTests2 {
             };
 
         // Sleep initial time
-        Thread.sleep(Math.round(60 * 1000 / RATE_GLOBAL_THROTTLING) * 2);
+        Thread.sleep(Math.round(60 * 1000 / RATE_GLOBAL_THROTTLING) + 3000);
 
         // 192.168.0.1
         mockMvc.perform(get("/{id}", "someKey")
@@ -150,7 +160,7 @@ public class UrlShortenerTests2 {
             };
 
         // Sleep initial time
-        Thread.sleep(Math.round(60 * 1000 / RATE_GLOBAL_THROTTLING) * 2);
+        Thread.sleep(Math.round(60 * 1000 / RATE_GLOBAL_THROTTLING) + 3000);
 
         // 192.168.0.1
         mockMvc.perform(post("/link")
@@ -195,7 +205,6 @@ public class UrlShortenerTests2 {
     public void thatShortenerExceedsIPLimitForRedirection() throws Exception {
         if (!runThrottlingTests) return;
         configureSave(null);
-        globalThrottling.setThrottlingPost(0);
         when(shortUrlService.findByKey("someKey")).thenReturn(someUrl());
 
         RequestPostProcessor postProcessor1 = request -> {
@@ -209,7 +218,7 @@ public class UrlShortenerTests2 {
             };
 
         // sleep 1 minute initial time
-        Thread.sleep(60 * 1000 + 100);
+        Thread.sleep(60 * 1000 + 1000);
 
         // 192.168.0.1
         for (int i = 0; i < UrlShortenerController.THROTTLING_GET_LIMIT_PER_ADDR; i++) {
@@ -236,7 +245,7 @@ public class UrlShortenerTests2 {
                 .andExpect(status().is(429));
 
         // sleep 1 minute
-        Thread.sleep(60 * 1000 + 100);
+        Thread.sleep(60 * 1000 + 1000);
 
         // 192.168.0.1
         for (int i = 0; i < UrlShortenerController.THROTTLING_GET_LIMIT_PER_ADDR; i++) {
@@ -269,7 +278,6 @@ public class UrlShortenerTests2 {
     @Test
     public void thatShortenerExceedsIPLimitForCreation() throws Exception {
         if (!runThrottlingTests) return;
-        globalThrottling.setThrottlingPost(0);
         configureSave(null);
 
         RequestPostProcessor postProcessor1 = request -> {
@@ -283,7 +291,7 @@ public class UrlShortenerTests2 {
             };
 
         // sleep 1 minute initial time
-        Thread.sleep(60 * 1000 + 100);
+        Thread.sleep(60 * 1000 + 1000);
 
         // 192.168.0.1
         for (int i = 0; i < UrlShortenerController.THROTTLING_POST_LIMIT_PER_ADDR; i++) {
@@ -314,7 +322,7 @@ public class UrlShortenerTests2 {
                 .andExpect(status().is(429));
 
         // sleep 1 minute
-        Thread.sleep(60 * 1000 + 100);
+        Thread.sleep(60 * 1000 + 1000);
 
         // 192.168.0.1
         for (int i = 0; i < UrlShortenerController.THROTTLING_POST_LIMIT_PER_ADDR; i++) {
@@ -347,6 +355,62 @@ public class UrlShortenerTests2 {
                 .andExpect(status().is(429));
 
         globalThrottling.setThrottlingPost(globalThrottlingRatePost);
+    }
+
+    @Test
+    public void thatShortenerExceedsUriLimitForRedirection() throws Exception {
+        if (!runThrottlingTests) return;
+        configureSave(null);
+        uriThrotlling.setThrottling(RATE_URI_THROTTLING);
+        when(shortUrlService.findByKey("anyKeys")).thenReturn(someUrl());
+
+        RequestPostProcessor postProcessor1 = request -> {
+                request.setRemoteAddr("192.168.0.1");
+                return request;
+        };
+
+        RequestPostProcessor postProcessor2 = request -> {
+                request.setRemoteAddr("192.168.0.2");
+                return request;
+            };
+
+        // sleep 1 minute initial time
+        Thread.sleep(60 * 1000 + 1000);
+
+        // 192.168.0.1
+        mockMvc.perform(get("/{id}", "anyKeys")
+                .with(postProcessor1))
+                .andExpect(status().isTemporaryRedirect())
+                .andExpect(redirectedUrl("http://example.com/"));
+        
+        // Wait less than 60 * 1000 / RATE_URI_THROTTLING;
+        Thread.sleep(Math.round(60 * 1000 / RATE_URI_THROTTLING * 0.5));
+
+        // 192.168.0.2
+        mockMvc.perform(get("/{id}", "anyKeys")
+                .with(postProcessor2))
+                .andExpect(status().is(429));
+
+        // Sleep needed time
+        Thread.sleep(Math.round(60 * 1000 / RATE_URI_THROTTLING));
+
+        // 192.168.0.1
+        mockMvc.perform(get("/{id}", "anyKeys")
+                .with(postProcessor1))
+                .andExpect(status().isTemporaryRedirect())
+                .andExpect(redirectedUrl("http://example.com/"));
+
+        // Sleep needed time
+        Thread.sleep(Math.round(60 * 1000 / RATE_URI_THROTTLING));
+
+        // 192.168.0.2
+        mockMvc.perform(get("/{id}", "anyKeys")
+                .with(postProcessor2))
+                .andExpect(status().isTemporaryRedirect())
+                .andExpect(redirectedUrl("http://example.com/"));
+        
+                
+        uriThrotlling.setThrottling(uriThrottlingRate);
     }
 
     private void configureSave(String sponsor) {
