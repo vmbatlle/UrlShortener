@@ -110,7 +110,7 @@ public class UrlShortenerController {
         return response.url().toString();
     }
 
-    @RequestMapping(value = {"/{id:(?!link|index).*}","/{id:(?!link|index|webjars|js|bootstrap)[a-z0-9]*}/**"}, method = RequestMethod.GET)
+    @RequestMapping(value = {"/{id:(?!link|index).*}","/{id:(?!link|index|webjars|js|bootstrap|css|img)[a-z0-9]*}/**"}, method = RequestMethod.GET)
     @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT_PER_ADDR, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<?> redirectTo(@PathVariable String id, HttpServletRequest request) {
         if (!globalThrottling.acquireGet()) throw new ThrottlingException();
