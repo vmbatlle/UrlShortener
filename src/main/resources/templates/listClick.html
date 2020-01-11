@@ -30,6 +30,7 @@
               <td>OS</td>
               <td>Browser</td>
               <td>Date</td>
+              <td>IP</td>
               <td>Referrer</td>
             </tr>
           </thead>
@@ -42,13 +43,14 @@
               <td th:text="${click.getPlatform()}">Os</td>
               <td th:text="${click.getBrowser()}">Browser</td>
               <td th:text="${click.getCreated()}">July 11, 2012 2:17:16 PM CDT</td>
+              <td th:text="${click.getIp()}">127.0.0.1</td>
               <td th:text="${click.getReferrer()}">localhost</td>
             </tr>
           </tbody>
         </table>
       </div>
       <div>
-        <th:block th:each="i: ${#numbers.sequence(1, (pages+1))}">
+        <th:block th:each="i: ${#numbers.sequence(1, (pages))}">
             <a th:href="@{/all(page=${i},start=${start},end=${end})}" th:text="${i}" class="btn">Button</a>
         </th:block>
       </div>

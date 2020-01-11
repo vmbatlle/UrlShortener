@@ -2,6 +2,7 @@ package urlshortener.web;
 
 import org.apache.commons.validator.routines.UrlValidator;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,7 @@ import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
 import urlshortener.service.UrlChecker;
+import urlshortener.service.FileCreator;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -30,6 +32,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -41,6 +44,8 @@ import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import java.util.Optional;
@@ -58,15 +63,20 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
+import com.squareup.okhttp.Headers;
 import com.weddini.throttling.Throttling;
 import com.weddini.throttling.ThrottlingType;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.springframework.core.io.UrlResource;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @RestController
 public class UrlShortenerController {
 
-    private static int defaultPageSize = 100;
+    private static long defaultPageSize = 5;
 
     private final ShortURLService shortUrlService;
 
@@ -75,20 +85,23 @@ public class UrlShortenerController {
     private UrlChecker urlchecker;
     private final APIAccess api_acces;
 
+    private final FilePetitions file_petitions;
+    private final FileCreator file_creator;
+
     private final CacheLoader<Long, Click> loader;
     private final LoadingCache<Long, Click> cache;
     
-    private final CacheLoader<Long, Download> loaderDownload;
-    private final LoadingCache<Long, Download> cacheDownload;
 
     public static final int THROTTLING_GET_LIMIT = 10;
     public static final int THROTTLING_POST_LIMIT = 10;
 
-    public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService, APIAccess api) {
+    public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService, APIAccess api){
         this.shortUrlService = shortUrlService;
         this.clickService = clickService;
         this.urlchecker = new UrlChecker(shortUrlService);
         this.api_acces = api;
+        this.file_petitions = new FilePetitions();
+        this.file_creator = new FileCreator(file_petitions,clickService);
 
         loader = new CacheLoader<Long, Click>() {
             @Override
@@ -170,53 +183,70 @@ public class UrlShortenerController {
 
     @GetMapping("/all")
     @RequestMapping(value = "/all", method = RequestMethod.GET)
-    public ModelAndView all(@RequestParam("page") Optional<Long> page, @RequestParam("size") Optional<Long> size,
+    public ModelAndView all(@RequestParam("page") Optional<Long> page,
             @RequestParam("start") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Optional<LocalDateTime> start,
             @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Optional<LocalDateTime> end) {
 
         ModelAndView modelo = new ModelAndView("listClick");
         if (!start.isPresent()) {
             if (page.orElse((long) 1) != 1) {
-                List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 5));
+                List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), defaultPageSize);
                 modelo.addObject("clicks", lc);
             } else {
-                System.out.println("Cogiendo valores de cache.....");
                 List<Click> lc = cache.asMap().values().stream().collect(Collectors.toList());
+                Collections.sort(lc, Collections.reverseOrder());
                 modelo.addObject("clicks", lc);
             }
             Long count = clickService.count();
-            modelo.addObject("pages", (int) (count / size.orElse((long) 5)));
+            modelo.addObject("pages", (int) Math.ceil((double)(count) / (double) defaultPageSize));
             modelo.addObject("page", page.orElse((long) 1));
             modelo.addObject("start", start.orElse(LocalDateTime.parse("2019-12-30T08:30")));
         } else {
             List<Click> lc = clickService.clicksReceivedDated(start.orElse(LocalDateTime.now()), page.orElse((long) 1),
-                    size.orElse((long) 5));
+                    defaultPageSize);
             modelo.addObject("clicks", lc);
             Long count = clickService.countByDate(start.orElse(LocalDateTime.now()));
-            modelo.addObject("pages", (int) (count / size.orElse((long) 5)));
+            modelo.addObject("pages", (int) Math.ceil((double)(count) / (double) defaultPageSize));
             modelo.addObject("page", page.orElse((long) 1));
             modelo.addObject("start", start.orElse(LocalDateTime.parse("2019-12-30T08:30")));
         }
-        System.out.println("ventana actual: " + start.orElse(null) + ", " + end.orElse(null));
         return modelo;
-
     }
 
     @RequestMapping(value = "/download-data", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ModelAndView download_data() {
         ModelAndView modelo = new ModelAndView("descarga");
+        List<Click> lastClick = clickService.clicksReceived(1, 1);
+        if(lastClick.size() == 0){
+            modelo.addObject("pending", false);
+        } else {
+            Long id = lastClick.get(0).getId();
+            modelo.addObject("pending", true);
+            file_petitions.addPetition(id);
+            String url = "all_data_" + id;
+            modelo.addObject("url", url);
+        }
         return modelo;
     }
 
-    @RequestMapping(value = "/download-data", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Click>> download_all() throws JsonIOException, IOException {
-        List<Click> clicks = clickService.allClicks();
-        Gson gson = new Gson();
-        gson.toJson(clicks, new FileWriter("./file.json"));
-        HttpHeaders respHeaders = new HttpHeaders();
-		respHeaders.setCacheControl("must-revalidate, post-check=0, pre-check=0");
-		respHeaders.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + "all_clicks.json");
-        return new ResponseEntity<List<Click>>(clicks, respHeaders, HttpStatus.OK);
+    @RequestMapping(value = "/dwn/all_data_{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<?> download_all(@PathVariable Long id) throws JsonIOException, IOException {
+        if(file_petitions.existsPetition(id)){
+            if(file_petitions.isReady(id)){
+                String fileName = file_petitions.getFile(id) + ".json";
+                Path p = Paths.get("./files/" + fileName);
+                Resource r = new UrlResource(p.toUri());
+                HttpHeaders respHeaders = new HttpHeaders();
+                respHeaders.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+                respHeaders.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName);
+                return new ResponseEntity<Resource>(r, respHeaders, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<String>("Lo sentimos pero el archivo no está listo, vuelva a intentarlo más tarde", null, HttpStatus.NO_CONTENT);
+            }
+        } else {
+            // ModelAndView modelo = new ModelAndView("badrequest");
+            return new ResponseEntity<String>("Lo sentimos pero no hay ninguna peticion de descarga con ese id", null, HttpStatus.NOT_FOUND);
+        }
     }
 
     @RequestMapping(value = "/link", method = RequestMethod.POST)
