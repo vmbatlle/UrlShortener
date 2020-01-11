@@ -14,40 +14,57 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
-
 import urlshortener.domain.Download;
 
 
 @Component
 public class FilePetitions {
 
+    // Store of download petitions
     private static Map<Long, Download> downloadPetitions;
 
     public FilePetitions() {
         downloadPetitions = new HashMap<Long, Download>();
     }
 
+    /**
+     * Add a new petition if not exists 
+     * @param id Identificator of new petition
+     */
     public void addPetition(Long id) {
         String url = "all_data_" + id;
         Download aux = downloadPetitions.get(id);
-        if (aux == null) {
-            aux = new Download(url, false, 1);
-        } else {
+        if (aux == null) {// If not exists create a new petition
+            aux = new Download(url, id, false, 1);
+        } else {// Increase number of id petitions
             aux.setCount(aux.getCount() + 1);
         }
         downloadPetitions.put(id, aux);
     }
 
+    /**
+     * 
+     * @param id petition searched
+     * @return true if exixts a petition with identificator id
+     */
     public boolean existsPetition(Long id) {
         return downloadPetitions.containsKey(id);
     }
 
+    /**
+     * 
+     * @param id petition searched
+     * @return true if the file has been generated for petition id
+     */
     public boolean isReady(Long id) {
         return downloadPetitions.containsKey(id) && downloadPetitions.get(id).getReady();
     }
 
+    /**
+     * 
+     * @param id petition searched
+     * @return name of the petition id if exists, empty string otherwise
+     */
     public String getFile(Long id) {
         if (downloadPetitions.containsKey(id)) {
             return downloadPetitions.get(id).getId();
@@ -56,10 +73,19 @@ public class FilePetitions {
         }
     }
 
+    /**
+     * 
+     * @return all keys stored
+     */
     public Set<Long> getKeys(){
         return downloadPetitions.keySet();
     }
 
+    /**
+     * 
+     * @param id petition searched
+     * @return the download related to petition id if exists, null otherwise
+     */
     public Download getDownload(Long id){
         if (downloadPetitions.containsKey(id)) {
             return downloadPetitions.get(id);
@@ -67,26 +93,5 @@ public class FilePetitions {
             return null;
         }
     }
-
-    /*@Async
-    public void createFile(Long id){
-        if(downloadPetitions.containsKey(id) && !downloadPetitions.get(id).getReady()){
-            System.out.println("Esta la petiocion con id: " + id);
-            Gson gson = new Gson();
-            List<Click> clicks = clickService.allClicks();
-            String filePath = "files/" + downloadPetitions.get(id).getId();
-            File json = new File(filePath);
-            try {
-                System.out.println(clicks);
-                json.createNewFile();
-                Writer wr =  new FileWriter(filePath);
-                gson.toJson(clicks, wr);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            System.out.println("Puesto a ready el fichero: " + filePath);
-            downloadPetitions.get(id).setReady(true);
-        }
-    }*/
 
 };

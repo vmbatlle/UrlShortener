@@ -32,6 +32,16 @@ public class ClickService {
         return cl;
     }
 
+    /**
+     * Create a new click with the given params
+     * @param hash hash of the sorted url
+     * @param ip address of the client
+     * @param os operative system of the client
+     * @param device device used by the client
+     * @param browser browser used by the client
+     * @param referrer web host that contains the short url
+     * @return click created
+     */
     public Click saveClickUserAgent(String hash, String ip, String os, String device, String browser, String referrer) {
         Click cl = ClickBuilder.newInstance().hash(hash).createdNow().ip(ip).browser(browser).platform(os).referrer(referrer).build();
         cl = clickRepository.save(cl);
@@ -47,59 +57,49 @@ public class ClickService {
         return clickRepository.listAll();
     }
     
+    /**
+     * 
+     * @param id Max id value to get
+     * @return all the clicks with ids lower than id
+     */
+    public List<Click> allClicksUntil(Long id){
+        return clickRepository.listAll(id);
+    }
+    
+    /**
+     * 
+     * @param time oldest date of clicks
+     * @param pag  page of clicks according lim
+     * @param lim size of page
+     * @return page of lim clicks (or less) with date>=time
+     */
     public List<Click> clicksReceivedDated(LocalDateTime time, long pag, long lim){
         return clickRepository.findByDate(time, lim, (pag - 1)*lim);
+    }
+    
+    /**
+     * 
+     * @param start oldest date of clicks
+     * @param end most recent date of clicks
+     * @param pag  page of clicks according lim
+     * @param lim size of page
+     * @return page of lim clicks (or less) with date>=time
+     */
+    public List<Click> clicksReceivedDated(LocalDateTime start, LocalDateTime end, long pag, long lim){
+        return clickRepository.findByDate(start, end, lim, (pag - 1)*lim);
     }
 
     public Long count(){
         return clickRepository.count();
     }
     
+    /**
+     * 
+     * @param time oldest date of clicks
+     * @return number of clicks with date>=time
+     */
     public Long countByDate(LocalDateTime time){
         return clickRepository.countByDate(time);
-    }
-    
-    public String clicksReceived(){
-        // TODO: Use future parameters for escalability
-        // long lim = 100;
-        // long off = 0;
-        JSONObject json = this.jsonClicks();
-        try{
-            return json.toString(4);
-        }catch(Exception e){
-            e.printStackTrace();
-            return json.toString();
-        }
-        
-    }
-
-    public JSONObject jsonClicks(){
-        long lim = 100;
-        long off = 0;
-        List<Click> lc = clickRepository.list(lim, off);
-        
-        JSONObject json = new JSONObject();
-        try{
-            JSONArray array = new JSONArray();
-            JSONObject item = new JSONObject();
-            
-            for (Click click : lc) {
-                item.put("URI", click.getId());
-                item.put("Referrer URI", click.getReferrer());
-                item.put("Browser", click.getBrowser());
-                item.put("OS", click.getPlatform());
-                item.put("IP", click.getIp());
-                DateFormat dateFormat = new SimpleDateFormat("d mon yyyy hh:mm:ss GMT");
-                item.put("Date", dateFormat.format(click.getCreated()));
-                array.put(item);
-                item = new JSONObject();
-            }
-            json.put("clicks", array);
-            
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-        return json;
     }
 
 }

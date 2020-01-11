@@ -22,8 +22,10 @@ import urlshortener.web.FilePetitions;
 import urlshortener.domain.Click;
 import urlshortener.service.ClickService;
 
-import org.jsoup.Connection.Response;
-
+/**
+ * Component that periodicaly creates files of download petitions
+ * that are not ready yet.
+ */
 @Component
 public class FileCreator {
 
@@ -37,11 +39,11 @@ public class FileCreator {
 
     @Scheduled(fixedDelay = 2000)
     private void periodicCheck() {
-        for (Long id : fg.getKeys()){
+        for (Long id : fg.getKeys()){//Iterate over all petition keys
             Download d = fg.getDownload(id);
-            if (!d.getReady()){
+            if (!d.getReady()){ // If petition is no ready yet create the according json file
                 Gson gson = new Gson();
-                List<Click> clicks = clickService.allClicks();
+                List<Click> clicks = clickService.allClicksUntil(id);
                 String filePath = "files/" + d.getId() + ".json";
                 File json = new File(filePath);
                 try {
@@ -53,6 +55,7 @@ public class FileCreator {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                // Set the petition to ready
                 d.setReady(true);
             }
         }

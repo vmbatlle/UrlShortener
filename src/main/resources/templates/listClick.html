@@ -18,6 +18,8 @@
       <form th:action="@{/all}" th:object="${start}" method="get">
         <label for="start">Enter start:</label>
         <input id="start" type="datetime-local" name="start" th:value="${start}">
+        <label for="start">Enter end:</label>
+        <input id="end" type="datetime-local" name="end" th:value="${end}">
         <button type="submit">Select Date</button>
      </form>
     </div>

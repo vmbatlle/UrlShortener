@@ -42,6 +42,8 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.sql.Date;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -141,20 +143,23 @@ public class UrlShortenerController {
         if (l != null) {
             List<String> data = null;
             try {
+                //Acces to UserStack API to extract user agent info
                 data = api_acces.extractInfoUserAgent(request);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
             Click cl = null;
-            if (data != null && !data.isEmpty()) {
+            if (data != null && !data.isEmpty()) {// If Data has been extracted, it's created full click
                 cl = clickService.saveClickUserAgent(id, extractIP(request), data.get(0), data.get(1), data.get(2),
                         request.getHeader("referer"));
             } else {
                 cl = clickService.saveClick(id, extractIP(request));
             }
-            // Inserting into cache
+
+            // Inserting new click into cache
             cache.put(cl.getId(), cl);
 
             Map<String, String[]> params_map = request.getParameterMap();
@@ -181,6 +186,13 @@ public class UrlShortenerController {
         }
     }
 
+    /**
+     * Pagination of the clicks stored in the database, default page size is 100
+     * @param page number of page to retrieve
+     * @param start Max created date of a click (default = 1970-01-01T00:00)
+     * @param end
+     * @return
+     */
     @GetMapping("/all")
     @RequestMapping(value = "/all", method = RequestMethod.GET)
     public ModelAndView all(@RequestParam("page") Optional<Long> page,
@@ -188,7 +200,9 @@ public class UrlShortenerController {
             @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Optional<LocalDateTime> end) {
 
         ModelAndView modelo = new ModelAndView("listClick");
+        // If there is no date get all page clicks
         if (!start.isPresent()) {
+            // If the first page is asked use the cache, better performance
             if (page.orElse((long) 1) != 1) {
                 List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), defaultPageSize);
                 modelo.addObject("clicks", lc);
@@ -197,29 +211,43 @@ public class UrlShortenerController {
                 Collections.sort(lc, Collections.reverseOrder());
                 modelo.addObject("clicks", lc);
             }
+
             Long count = clickService.count();
+            // Total number of pages
             modelo.addObject("pages", (int) Math.ceil((double)(count) / (double) defaultPageSize));
             modelo.addObject("page", page.orElse((long) 1));
-            modelo.addObject("start", start.orElse(LocalDateTime.parse("2019-12-30T08:30")));
+            modelo.addObject("start", start.orElse(LocalDateTime.parse("1970-01-01T00:00")));
+            modelo.addObject("end", end.orElse(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)));
+
         } else {
-            List<Click> lc = clickService.clicksReceivedDated(start.orElse(LocalDateTime.now()), page.orElse((long) 1),
+            List<Click> lc = clickService.clicksReceivedDated(start.orElse(LocalDateTime.now()),
+                    end.orElse(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)), 
+                    page.orElse((long) 1),
                     defaultPageSize);
             modelo.addObject("clicks", lc);
             Long count = clickService.countByDate(start.orElse(LocalDateTime.now()));
             modelo.addObject("pages", (int) Math.ceil((double)(count) / (double) defaultPageSize));
             modelo.addObject("page", page.orElse((long) 1));
-            modelo.addObject("start", start.orElse(LocalDateTime.parse("2019-12-30T08:30")));
+            modelo.addObject("start", start.orElse(LocalDateTime.parse("1970-01-01T00:00")));
+            modelo.addObject("end", end.orElse(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)));
         }
         return modelo;
     }
 
+    /**
+     * 
+     * @return Succes view if there are some clicks stored and it's possible to generate a file
+     */
     @RequestMapping(value = "/download-data", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ModelAndView download_data() {
         ModelAndView modelo = new ModelAndView("descarga");
         List<Click> lastClick = clickService.clicksReceived(1, 1);
+
+        // If there aren't clicks show error message to client
         if(lastClick.size() == 0){
             modelo.addObject("pending", false);
         } else {
+            //Add a new download petition from click id to the first one
             Long id = lastClick.get(0).getId();
             modelo.addObject("pending", true);
             file_petitions.addPetition(id);
@@ -229,9 +257,16 @@ public class UrlShortenerController {
         return modelo;
     }
 
+    /**
+     * 
+     * @param id special code to select the download file (given in download-data)
+     * @return
+     * @throws JsonIOException
+     * @throws IOException
+     */
     @RequestMapping(value = "/dwn/all_data_{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<?> download_all(@PathVariable Long id) throws JsonIOException, IOException {
-        if(file_petitions.existsPetition(id)){
+        if(file_petitions.existsPetition(id)){// If the id is correct, check availability of the file
             if(file_petitions.isReady(id)){
                 String fileName = file_petitions.getFile(id) + ".json";
                 Path p = Paths.get("./files/" + fileName);

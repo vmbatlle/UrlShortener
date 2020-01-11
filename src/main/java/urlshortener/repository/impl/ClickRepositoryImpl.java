@@ -54,12 +54,26 @@ public class ClickRepositoryImpl implements ClickRepository {
     @Override
     public List<Click> findByDate(LocalDateTime time, Long limit, Long offset) {
         try {
-            // Date date = java.sql.Date.valueOf(time.toLocalDate());
+            // Turn time into sql types
             Timestamp date = Timestamp.from(time.atZone(ZoneId.systemDefault()).toInstant());
             return jdbc.query("SELECT * FROM click WHERE created>=? ORDER BY id DESC LIMIT ? OFFSET ?",
                     new Object[]{date, limit, offset}, rowMapper);
         } catch (Exception e) {
             log.debug("When select for time " + time, e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<Click> findByDate(LocalDateTime start, LocalDateTime end, Long limit, Long offset){
+        try {
+            // Turn start and end into sql types
+            Timestamp startDate = Timestamp.from(start.atZone(ZoneId.systemDefault()).toInstant());
+            Timestamp endDate = Timestamp.from(end.atZone(ZoneId.systemDefault()).toInstant());
+            return jdbc.query("SELECT * FROM click WHERE created>=? AND created<=? ORDER BY id DESC LIMIT ? OFFSET ?",
+                    new Object[]{startDate, endDate, limit, offset}, rowMapper);
+        } catch (Exception e) {
+            log.debug("When select for time " + start, e);
             return Collections.emptyList();
         }
     }
@@ -172,6 +186,17 @@ public class ClickRepositoryImpl implements ClickRepository {
         try {
             return jdbc.query("SELECT * FROM click ORDER BY id DESC",
                     new Object[]{}, rowMapper);
+        } catch (Exception e) {
+            log.debug("When select all " , e);
+            return Collections.emptyList();
+        }
+    }
+    
+    @Override
+    public List<Click> listAll(Long id) {
+        try {
+            return jdbc.query("SELECT * FROM click WHERE id<=? ORDER BY id DESC",
+                    new Object[]{id}, rowMapper);
         } catch (Exception e) {
             log.debug("When select all " , e);
             return Collections.emptyList();
