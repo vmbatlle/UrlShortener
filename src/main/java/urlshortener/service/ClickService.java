@@ -43,6 +43,10 @@ public class ClickService {
         return clickRepository.list(lim, (pag - 1)*lim);
     }
     
+    public List<Click> allClicks(){
+        return clickRepository.listAll();
+    }
+    
     public List<Click> clicksReceivedDated(LocalDateTime time, long pag, long lim){
         return clickRepository.findByDate(time, lim, (pag - 1)*lim);
     }

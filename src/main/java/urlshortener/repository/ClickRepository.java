@@ -26,4 +26,6 @@ public interface ClickRepository {
     Long countByDate(LocalDateTime time);
 
     List<Click> list(Long limit, Long offset);
+
+    List<Click> listAll();
 }

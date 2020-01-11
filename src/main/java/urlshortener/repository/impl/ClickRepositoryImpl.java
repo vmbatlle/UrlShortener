@@ -166,6 +166,17 @@ public class ClickRepositoryImpl implements ClickRepository {
             return Collections.emptyList();
         }
     }
+    
+    @Override
+    public List<Click> listAll() {
+        try {
+            return jdbc.query("SELECT * FROM click ORDER BY id DESC",
+                    new Object[]{}, rowMapper);
+        } catch (Exception e) {
+            log.debug("When select all " , e);
+            return Collections.emptyList();
+        }
+    }
 
     @Override
     public Long clicksByHash(String hash) {
