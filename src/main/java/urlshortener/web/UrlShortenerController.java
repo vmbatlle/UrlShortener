@@ -202,6 +202,7 @@ public class UrlShortenerController {
         ModelAndView modelo = new ModelAndView("listClick");
         // If there is no date get all page clicks
         if (!start.isPresent()) {
+            modelo.addObject("window", false);
             // If the first page is asked use the cache, better performance
             if (page.orElse((long) 1) != 1) {
                 List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), defaultPageSize);
@@ -220,12 +221,15 @@ public class UrlShortenerController {
             modelo.addObject("end", end.orElse(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)));
 
         } else {
+            // Value to use href with or without temporal window, used if "Window" = true
+            modelo.addObject("window", true);
+
             List<Click> lc = clickService.clicksReceivedDated(start.orElse(LocalDateTime.now()),
                     end.orElse(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)), 
                     page.orElse((long) 1),
                     defaultPageSize);
             modelo.addObject("clicks", lc);
-            Long count = clickService.countByDate(start.orElse(LocalDateTime.now()));
+            Long count = clickService.countByDate(start.orElse(LocalDateTime.now()), end.orElse(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)));
             modelo.addObject("pages", (int) Math.ceil((double)(count) / (double) defaultPageSize));
             modelo.addObject("page", page.orElse((long) 1));
             modelo.addObject("start", start.orElse(LocalDateTime.parse("1970-01-01T00:00")));

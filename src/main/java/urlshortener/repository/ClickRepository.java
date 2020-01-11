@@ -45,6 +45,13 @@ public interface ClickRepository {
      * @return number of clicks with date>=time
      */
     Long countByDate(LocalDateTime time);
+    
+    /**
+     * @param start oldest date of clicks
+     * @param end most recent date of clicks
+     * @return number of clicks with date>=time
+     */
+    Long countByDate(LocalDateTime start, LocalDateTime end);
 
     List<Click> list(Long limit, Long offset);
 

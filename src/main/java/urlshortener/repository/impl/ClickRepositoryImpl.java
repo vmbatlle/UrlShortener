@@ -81,9 +81,22 @@ public class ClickRepositoryImpl implements ClickRepository {
     @Override
     public Long countByDate(LocalDateTime time){
         try {
-            Date date = java.sql.Date.valueOf(time.toLocalDate());
+            Timestamp date = Timestamp.from(time.atZone(ZoneId.systemDefault()).toInstant());
             return jdbc
                     .queryForObject("select count(*) from click WHERE created>=?", new Object[]{date}, Long.class);
+        } catch (Exception e) {
+            log.debug("When counting", e);
+        }
+        return -1L;
+    }
+
+    @Override
+    public Long countByDate(LocalDateTime start, LocalDateTime end){
+        try {
+            Timestamp startDate = Timestamp.from(start.atZone(ZoneId.systemDefault()).toInstant());
+            Timestamp endDate = Timestamp.from(end.atZone(ZoneId.systemDefault()).toInstant());
+            return jdbc
+                    .queryForObject("select count(*) from click WHERE created>=? AND created<=?", new Object[]{startDate, endDate}, Long.class);
         } catch (Exception e) {
             log.debug("When counting", e);
         }

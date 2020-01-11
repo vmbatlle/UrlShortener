@@ -101,5 +101,15 @@ public class ClickService {
     public Long countByDate(LocalDateTime time){
         return clickRepository.countByDate(time);
     }
+    
+    /**
+     * 
+     * @param start oldest date of clicks
+     * @param end most recent date of clicks
+     * @return number of clicks with date>=time
+     */
+    public Long countByDate(LocalDateTime start, LocalDateTime end){
+        return clickRepository.countByDate(start, end);
+    }
 
 }

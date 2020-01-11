@@ -53,7 +53,8 @@
       </div>
       <div>
         <th:block th:each="i: ${#numbers.sequence(1, (pages))}">
-            <a th:href="@{/all(page=${i},start=${start},end=${end})}" th:text="${i}" class="btn">Button</a>
+            <a th:if="${window}" th:href="@{/all(page=${i},start=${start},end=${end})}" th:text="${i}" class="btn">Button</a>
+            <a th:unless="${window}" th:href="@{/all(page=${i})}" th:text="${i}" class="btn">Button</a>
         </th:block>
       </div>
 </body>
