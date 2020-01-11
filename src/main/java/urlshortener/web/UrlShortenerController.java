@@ -116,9 +116,11 @@ public class UrlShortenerController {
         if (!globalThrottling.acquireGet()) throw new ThrottlingException();
         if (!uriThrottling.acquire(id)) throw new ThrottlingException();
         ShortURL l = shortUrlService.findByKey(id);
-        if (!l.getSafe()) {
+        if (l == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } else if (!l.getSafe()) {
             return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
-        } else if(l != null) {
+        } else {
             List<String> data = null;
             try {
                 data = api_acces.extractInfoUserAgent(request);
@@ -154,9 +156,7 @@ public class UrlShortenerController {
             }
             //if (path != null) System.out.println(path);
             return createSuccessfulRedirectToResponse(l,restOfTheUrl,params);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        } 
     }
 
 
