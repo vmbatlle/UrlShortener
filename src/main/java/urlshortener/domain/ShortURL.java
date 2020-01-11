@@ -70,6 +70,10 @@ public class ShortURL {
         return safe;
     }
 
+    public void setSafe(boolean state) {
+        safe = state;
+    }
+
     public String getIP() {
         return ip;
     }

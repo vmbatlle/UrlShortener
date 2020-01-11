@@ -26,17 +26,7 @@ public class UrlChecker {
 
     public boolean isAccesible(String url_s) {
         boolean ret = false;
-        try {
-            // ret = InetAddress.getByName(new URL(url_s).getHost()).isReachable(1000);
-            // int responseCode = 400;
-            // URL url = new URL(url_s);
-            // HttpURLConnection huc = (HttpURLConnection) url.openConnection();
-            // huc.setRequestMethod("HEAD");
-            // huc.setConnectTimeout(1000);
-            // huc.setReadTimeout(1000);
-            // responseCode = huc.getResponseCode();
-            // ret = ret && ( responseCode == HttpURLConnection.HTTP_OK);
-            
+        try {           
             int responseCode = 400;
             Response response = Jsoup.connect(url_s).timeout(1000)
                                                     .followRedirects(true)
@@ -44,8 +34,9 @@ public class UrlChecker {
                                                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:71.0) Gecko/20100101 Firefox/71.0")
                                                     .execute();
             responseCode = response.statusCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) return true;
-            else if (responseCode == 307) {
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                return true;
+            } else if (responseCode == 307) {
                 String sNewUrl = response.header("Location");
                 if (sNewUrl != null && sNewUrl.length() > 7)
                     return isAccesible(sNewUrl);
@@ -60,15 +51,21 @@ public class UrlChecker {
 
     @Scheduled(fixedDelayString = "${uri.checker.period}")
     private void periodicCheck() {
-        List<String> to_delete = new LinkedList<String>();
+        //List<String> to_notsafe = new LinkedList<String>();
         for (ShortURL url : shortUrlService.all()) {
             if (!isAccesible(url.getTarget())) {
-                to_delete.add(url.getHash());
+                url.setSafe(false);
+                shortUrlService.update(url);
+            }
+            else if (!url.getSafe() && isAccesible(url.getTarget())) {
+                url.setSafe(true);
+                shortUrlService.update(url);
             }
         }
-        for (String id : to_delete) {
-            shortUrlService.delete(id);
-        }
+        // for (String id : to_notsafe) {
+        //         url.setSafe(true);
+        //         shortUrlService.update(url);
+        // }
     }
         
 

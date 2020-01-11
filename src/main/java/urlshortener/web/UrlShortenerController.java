@@ -116,7 +116,9 @@ public class UrlShortenerController {
         if (!globalThrottling.acquireGet()) throw new ThrottlingException();
         if (!uriThrottling.acquire(id)) throw new ThrottlingException();
         ShortURL l = shortUrlService.findByKey(id);
-        if (l != null) {
+        if (!l.getSafe()) {
+            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
+        } else if(l != null) {
             List<String> data = null;
             try {
                 data = api_acces.extractInfoUserAgent(request);
