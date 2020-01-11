@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.jsoup.Connection.Response;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 
 @Component
@@ -38,16 +39,22 @@ public class UrlChecker {
             
             int responseCode = 400;
             Response response = Jsoup.connect(url_s).timeout(1000)
+                                                    .followRedirects(true)
+                                                    .ignoreHttpErrors(true)
                                                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:71.0) Gecko/20100101 Firefox/71.0")
                                                     .execute();
             responseCode = response.statusCode();
-            //System.out.println("STCODE: " + responseCode);
-            ret = responseCode == HttpURLConnection.HTTP_OK;
-
+            if (responseCode == HttpURLConnection.HTTP_OK) return true;
+            else if (responseCode == 307) {
+                String sNewUrl = response.header("Location");
+                if (sNewUrl != null && sNewUrl.length() > 7)
+                    return isAccesible(sNewUrl);
+            }
         } catch (IOException e1){
             e1.printStackTrace();
             ret = false;
-        } 
+        }
+        
         return ret;
     }
 

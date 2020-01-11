@@ -90,15 +90,15 @@ public class SystemTests {
 
     @Test
     public void AddExistingURIAfter301ToRedirect() throws Exception {
-        ResponseEntity<String> entity = postLink("http://goo.gl/fb/gyBkwR/");
-
+        ResponseEntity<String> entity = postLink("http://google.com/","google");
         assertThat(entity.getStatusCode(), is(HttpStatus.CREATED));
-        assertThat(entity.getHeaders().getLocation(), is(new URI("http://localhost:" + this.port + "/f4f5f3a2")));
-        assertThat(entity.getHeaders().getContentType(), is(new MediaType("application", "json", StandardCharsets.UTF_8)));
-        ReadContext rc = JsonPath.parse(entity.getBody());
-        assertThat(rc.read("$.hash"), is("f4f5f3a2"));
-        assertThat(rc.read("$.uri"), is("http://localhost:" + this.port + "/f4f5f3a2"));
-        assertThat(rc.read("$.target"), is("https://mkyong.com/mongodb/mongodb-remove-a-field-from-array-documents/"));
+
+        ResponseEntity<String> entity2 = postLink("http://localhost:" + this.port + "/google");
+        assertThat(entity2.getStatusCode(), is(HttpStatus.CREATED));
+
+        ResponseEntity<String> entity3 = restTemplate.getForEntity("/google", String.class);
+        assertThat(entity3.getStatusCode(), is(HttpStatus.TEMPORARY_REDIRECT));
+        assertThat(entity3.getHeaders().getLocation(), is(new URI("http://www.google.com/")));
     }
 
     @Test

@@ -213,7 +213,7 @@ public class UrlShortenerController {
         if (!globalThrottling.acquirePost()) throw new ThrottlingException();
         UrlValidator urlValidator = new UrlValidator(new String[]{"http", "https"});
         boolean accesible = urlchecker.isAccesible(url);
-        if ((urlValidator.isValid(url) || (url.contains("://localhost:") && url.contains("test_scheduler"))) && accesible ) {
+        if ((urlValidator.isValid(url) || url.contains("://localhost:")) && accesible ) {
         //if (accesible) {
             if (sponsor != null && sponsor.equals("")) sponsor = null;
             if (sponsor != null && shortUrlService.findByKey(sponsor) != null) {
