@@ -2,7 +2,7 @@ package urlshortener.domain;
 
 import java.sql.Timestamp;
 
-public class Click {
+public class Click implements Comparable<Click> {
 
     private Long id;
     private String hash;
@@ -61,5 +61,10 @@ public class Click {
 
     public String getCountry() {
         return country;
+    }
+
+    @Override
+    public int compareTo(Click o) {
+        return this.getId().compareTo(o.getId());
     }
 }

@@ -18,6 +18,8 @@
       <form th:action="@{/all}" th:object="${start}" method="get">
         <label for="start">Enter start:</label>
         <input id="start" type="datetime-local" name="start" th:value="${start}">
+        <label for="start">Enter end:</label>
+        <input id="end" type="datetime-local" name="end" th:value="${end}">
         <button type="submit">Select Date</button>
      </form>
     </div>
@@ -30,6 +32,7 @@
               <td>OS</td>
               <td>Browser</td>
               <td>Date</td>
+              <td>IP</td>
               <td>Referrer</td>
             </tr>
           </thead>
@@ -42,14 +45,16 @@
               <td th:text="${click.getPlatform()}">Os</td>
               <td th:text="${click.getBrowser()}">Browser</td>
               <td th:text="${click.getCreated()}">July 11, 2012 2:17:16 PM CDT</td>
+              <td th:text="${click.getIp()}">127.0.0.1</td>
               <td th:text="${click.getReferrer()}">localhost</td>
             </tr>
           </tbody>
         </table>
       </div>
       <div>
-        <th:block th:each="i: ${#numbers.sequence(1, (pages+1))}">
-            <a th:href="@{/all(page=${i},start=${start},end=${end})}" th:text="${i}" class="btn">Button</a>
+        <th:block th:each="i: ${#numbers.sequence(1, (pages))}">
+            <a th:if="${window}" th:href="@{/all(page=${i},start=${start},end=${end})}" th:text="${i}" class="btn">Button</a>
+            <a th:unless="${window}" th:href="@{/all(page=${i})}" th:text="${i}" class="btn">Button</a>
         </th:block>
       </div>
 </body>
