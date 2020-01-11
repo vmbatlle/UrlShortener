@@ -90,14 +90,11 @@ public class SystemTests {
 
     @Test
     public void AddExistingURIAfter301ToRedirect() throws Exception {
-        ResponseEntity<String> entity = postLink("http://google.com/","google");
+        ResponseEntity<String> entity = postLink("https://bit.ly/2sgNe8D", "google");
         assertThat(entity.getStatusCode(), is(HttpStatus.CREATED));
 
-        ResponseEntity<String> entity2 = postLink("http://localhost:" + this.port + "/google");
-        assertThat(entity2.getStatusCode(), is(HttpStatus.CREATED));
-
-        ResponseEntity<String> entity3 = restTemplate.getForEntity("/google", String.class);
-        assertThat(entity3.getHeaders().getLocation(), is(new URI("http://www.google.com/")));
+        ResponseEntity<String> entity2 = restTemplate.getForEntity("/google", String.class);
+        assertThat(entity2.getHeaders().getLocation(), is(new URI("https://www.google.com/")));
     }
 
     @Test
