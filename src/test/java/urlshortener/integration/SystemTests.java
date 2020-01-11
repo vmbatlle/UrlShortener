@@ -102,14 +102,20 @@ public class SystemTests {
         ResponseEntity<String> entity = postLink("http://localhost:" + this.port + "/test_scheduler");
         assertThat(entity.getStatusCode(), is(HttpStatus.CREATED));
         ReadContext rc = JsonPath.parse(entity.getBody());
-        //assertThat(rc.read("$.hash"), is("571a4332"));
-
         String hash = rc.read("$.hash");
+
+        //set to bad request
+        restTemplate.getForEntity("/test_scheduler", String.class);
 
         Thread.sleep(11000);
 
         ResponseEntity<String> entity2 = restTemplate.getForEntity("/"+ hash, String.class);
         assertThat(entity2.getStatusCode(), is(HttpStatus.NOT_ACCEPTABLE));
+
+        Thread.sleep(11000);
+
+        ResponseEntity<String> entity3 = restTemplate.getForEntity("/"+ hash, String.class);
+        assertThat(entity3.getStatusCode(), is(HttpStatus.TEMPORARY_REDIRECT));
     }
 
 

@@ -144,17 +144,17 @@ public class UrlShortenerController {
             Set<String> params_keys = params_map.keySet();
 
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-            for (String key : params_keys) { System.out.println(key); params.addAll(key, Arrays.asList(params_map.get(key))); }
+            //for (String key : params_keys) { System.out.println(key); params.addAll(key, Arrays.asList(params_map.get(key))); }
             String restOfTheUrl = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
             //String restOfTheUrl = (String) request.getRequestURI();
 
             if (restOfTheUrl != null && restOfTheUrl.length() > 9) {
                 restOfTheUrl = restOfTheUrl.substring(restOfTheUrl.indexOf("/",2));
-                //System.out.println(restOfTheUrl);
+                ////System.out.println(restOfTheUrl);
             } else {
                 restOfTheUrl = "";
             }
-            //if (path != null) System.out.println(path);
+            //if (path != null) //System.out.println(path);
             return createSuccessfulRedirectToResponse(l,restOfTheUrl,params);
         } 
     }
@@ -173,7 +173,7 @@ public class UrlShortenerController {
                 List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse((long) 5));
                 modelo.addObject("clicks", lc);
             } else {
-                System.out.println("Cogiendo valores de cache.....");
+                //System.out.println("Cogiendo valores de cache.....");
                 List<Click> lc = cache.asMap().values().stream().collect(Collectors.toList());
                 modelo.addObject("clicks", lc);
             }
@@ -189,7 +189,7 @@ public class UrlShortenerController {
             modelo.addObject("page", page.orElse((long) 1));
             modelo.addObject("start", start.orElse(LocalDateTime.parse("2019-12-30T08:30")));
         }
-        System.out.println("ventana actual: " + start.orElse(null) + ", " + end.orElse(null));
+        //System.out.println("ventana actual: " + start.orElse(null) + ", " + end.orElse(null));
         return modelo;
 
     }
@@ -215,6 +215,7 @@ public class UrlShortenerController {
         if (!globalThrottling.acquirePost()) throw new ThrottlingException();
         UrlValidator urlValidator = new UrlValidator(new String[]{"http", "https"});
         boolean accesible = urlchecker.isAccesible(url);
+        //System.out.println("cheking sync: " + url + " RESULT " + accesible);
         if ((urlValidator.isValid(url) || url.contains("://localhost:")) && accesible ) {
         //if (accesible) {
             if (sponsor != null && sponsor.equals("")) sponsor = null;
@@ -228,7 +229,7 @@ public class UrlShortenerController {
             h.setLocation(su.getUri());
             return new ResponseEntity<>(su, h, HttpStatus.CREATED);
         } else {
-            System.out.println("Valid = " + urlValidator.isValid(url) + " Accesible = " + accesible);
+            //System.out.println("Valid = " + urlValidator.isValid(url) + " Accesible = " + accesible);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
@@ -237,8 +238,11 @@ public class UrlShortenerController {
     public ResponseEntity<ShortURL> test_scheduler() {
         if (firstTime) {
             firstTime = false;
+            //System.out.println("Chaning to BAD REQUEST");
             return new ResponseEntity<>(HttpStatus.OK);
         } else {
+            firstTime = true;
+            //System.out.println("Chaning to OK");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
