@@ -27,6 +27,10 @@ public class ShortURLService {
         shortURLRepository.delete(id);
     }
 
+    public void update(ShortURL nsu) {
+        shortURLRepository.update(nsu);
+    }
+
     public List<ShortURL> all() {
         long limit = shortURLRepository.count();
         return shortURLRepository.list(limit, 0L);

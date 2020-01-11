@@ -89,17 +89,35 @@ public class SystemTests {
     }
 
     @Test
-    public void AddExistingURIAfter301ToHttps() throws Exception {
-        ResponseEntity<String> entity = postLink("http://goo.gl/fb/gyBkwR/");
-
+    public void AddExistingURIAfter301ToRedirect() throws Exception {
+        ResponseEntity<String> entity = postLink("https://bit.ly/2sgNe8D", "google");
         assertThat(entity.getStatusCode(), is(HttpStatus.CREATED));
-        assertThat(entity.getHeaders().getLocation(), is(new URI("http://localhost:" + this.port + "/9a2911b4")));
-        assertThat(entity.getHeaders().getContentType(), is(new MediaType("application", "json", StandardCharsets.UTF_8)));
-        ReadContext rc = JsonPath.parse(entity.getBody());
-        assertThat(rc.read("$.hash"), is("9a2911b4"));
-        assertThat(rc.read("$.uri"), is("http://localhost:" + this.port + "/9a2911b4"));
-        assertThat(rc.read("$.target"), is("https://www.mkyong.com/mongodb/mongodb-remove-a-field-from-array-documents/"));
+
+        ResponseEntity<String> entity2 = restTemplate.getForEntity("/google", String.class);
+        assertThat(entity2.getHeaders().getLocation(), is(new URI("https://www.google.com/")));
     }
+
+    @Test
+    public void DeleteDisabledUrisAfterTime() throws Exception {
+        ResponseEntity<String> entity = postLink("http://localhost:" + this.port + "/test_scheduler");
+        assertThat(entity.getStatusCode(), is(HttpStatus.CREATED));
+        ReadContext rc = JsonPath.parse(entity.getBody());
+        String hash = rc.read("$.hash");
+
+        //set to bad request
+        restTemplate.getForEntity("/test_scheduler", String.class);
+
+        Thread.sleep(11000);
+
+        ResponseEntity<String> entity2 = restTemplate.getForEntity("/"+ hash, String.class);
+        assertThat(entity2.getStatusCode(), is(HttpStatus.NOT_ACCEPTABLE));
+
+        Thread.sleep(11000);
+
+        ResponseEntity<String> entity3 = restTemplate.getForEntity("/"+ hash, String.class);
+        assertThat(entity3.getStatusCode(), is(HttpStatus.TEMPORARY_REDIRECT));
+    }
+
 
     @Test
     public void testRedirectionSponsor() throws Exception {

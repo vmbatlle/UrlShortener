@@ -49,11 +49,20 @@ public class UrlShortenerTests3 {
 
     @Mock
     private APIAccess api_acces;
+
+    @Mock
+    private GlobalThrottling globalThrottling;
+
+    @Mock
+    private URIThrotlling uriThrotlling;
     
     @Before
     public void setup() {
         this.mockMvc = webAppContextSetup(webApplicationContext).build();
         ReflectionTestUtils.setField(api_acces, "userStackKey", "e4edfb3090e960cd96d7a9df73acc622");
+        when(globalThrottling.acquireGet()).then(invocation -> true);
+        when(globalThrottling.acquirePost()).then(invocation -> true);
+        when(uriThrotlling.acquire(any())).then(invocation -> true);
     }
 
     @Test

@@ -3,13 +3,13 @@ package urlshortener.web;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -17,7 +17,6 @@ import urlshortener.domain.Click;
 
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.HandlerMapping;
 
 import urlshortener.domain.ShortURL;
@@ -28,6 +27,7 @@ import urlshortener.service.FileCreator;
 
 import javax.servlet.http.HttpServletRequest;
 
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -36,15 +36,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
+
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.sql.Date;
 import java.time.LocalDateTime;
+
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,8 +53,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Map;
 import java.util.Set;
-
-import org.json.JSONObject;
 
 import org.jsoup.Connection.Response;
 import org.jsoup.HttpStatusException;
@@ -67,6 +65,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.squareup.okhttp.Headers;
 import com.weddini.throttling.Throttling;
+import com.weddini.throttling.ThrottlingException;
 import com.weddini.throttling.ThrottlingType;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -94,16 +93,25 @@ public class UrlShortenerController {
     private final LoadingCache<Long, Click> cache;
     
 
-    public static final int THROTTLING_GET_LIMIT = 10;
-    public static final int THROTTLING_POST_LIMIT = 10;
+    /** All throttling units are requests per minute */
+    public static final int THROTTLING_GET_LIMIT_PER_ADDR = 10;
+    public static final int THROTTLING_POST_LIMIT_PER_ADDR = 10;
+    public GlobalThrottling globalThrottling;
+    public URIThrotlling uriThrottling;
 
-    public UrlShortenerController(ShortURLService shortUrlService, ClickService clickService, APIAccess api){
+    private static boolean firstTime = true;
+
+    public UrlShortenerController(ShortURLService shortUrlService, 
+            ClickService clickService, APIAccess api, GlobalThrottling gt,
+            URIThrotlling ut) {
         this.shortUrlService = shortUrlService;
         this.clickService = clickService;
         this.urlchecker = new UrlChecker(shortUrlService);
         this.api_acces = api;
         this.file_petitions = new FilePetitions();
         this.file_creator = new FileCreator(file_petitions,clickService);
+        this.globalThrottling = gt;
+        this.uriThrottling = ut;
 
         loader = new CacheLoader<Long, Click>() {
             @Override
@@ -135,12 +143,18 @@ public class UrlShortenerController {
         return response.url().toString();
     }
 
-    @RequestMapping(value = { "/{id:(?!link|index).*}",
-            "/{id:(?!link|index|webjars|js|bootstrap)[a-z0-9]*}/**" }, method = RequestMethod.GET)
-    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT, timeUnit = TimeUnit.MINUTES)
+
+    @RequestMapping(value = {"/{id:(?!link|index).*}","/{id:(?!link|index|webjars|js|bootstrap|css|img)[a-z0-9]*}/**"}, method = RequestMethod.GET)
+    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_GET_LIMIT_PER_ADDR, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<?> redirectTo(@PathVariable String id, HttpServletRequest request) {
+        if (!globalThrottling.acquireGet()) throw new ThrottlingException();
+        if (!uriThrottling.acquire(id)) throw new ThrottlingException();
         ShortURL l = shortUrlService.findByKey(id);
-        if (l != null) {
+        if (l == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } else if (!l.getSafe()) {
+            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
+        } else {
             List<String> data = null;
             try {
                 //Acces to UserStack API to extract user agent info
@@ -158,7 +172,7 @@ public class UrlShortenerController {
             } else {
                 cl = clickService.saveClick(id, extractIP(request));
             }
-
+          
             // Inserting new click into cache
             cache.put(cl.getId(), cl);
 
@@ -166,24 +180,20 @@ public class UrlShortenerController {
             Set<String> params_keys = params_map.keySet();
 
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-            for (String key : params_keys) {
-                System.out.println(key);
-                params.addAll(key, Arrays.asList(params_map.get(key)));
-            }
+
+            //for (String key : params_keys) { System.out.println(key); params.addAll(key, Arrays.asList(params_map.get(key))); }
             String restOfTheUrl = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
             // String restOfTheUrl = (String) request.getRequestURI();
 
             if (restOfTheUrl != null && restOfTheUrl.length() > 9) {
-                restOfTheUrl = restOfTheUrl.substring(restOfTheUrl.indexOf("/", 2));
-                // System.out.println(restOfTheUrl);
+                restOfTheUrl = restOfTheUrl.substring(restOfTheUrl.indexOf("/",2));
+                ////System.out.println(restOfTheUrl);
             } else {
                 restOfTheUrl = "";
             }
-            // if (path != null) System.out.println(path);
-            return createSuccessfulRedirectToResponse(l, restOfTheUrl, params);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+            //if (path != null) //System.out.println(path);
+            return createSuccessfulRedirectToResponse(l,restOfTheUrl,params);
+        } 
     }
 
     /**
@@ -289,12 +299,16 @@ public class UrlShortenerController {
     }
 
     @RequestMapping(value = "/link", method = RequestMethod.POST)
-    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_POST_LIMIT, timeUnit = TimeUnit.MINUTES)
+    @Throttling(type = ThrottlingType.RemoteAddr, limit = THROTTLING_POST_LIMIT_PER_ADDR, timeUnit = TimeUnit.MINUTES)
     public ResponseEntity<ShortURL> shortener(@RequestParam("url") String url,
                                               @RequestParam(value = "sponsor", required = false) String sponsor,
                                               HttpServletRequest request) {
+        if (!globalThrottling.acquirePost()) throw new ThrottlingException();
         UrlValidator urlValidator = new UrlValidator(new String[]{"http", "https"});
-        if (urlValidator.isValid(url) && urlchecker.isAccesible(url)) {
+        boolean accesible = urlchecker.isAccesible(url);
+        //System.out.println("cheking sync: " + url + " RESULT " + accesible);
+        if ((urlValidator.isValid(url) || url.contains("://localhost:")) && accesible ) {
+        //if (accesible) {
             if (sponsor != null && sponsor.equals("")) sponsor = null;
             if (sponsor != null && shortUrlService.findByKey(sponsor) != null) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -306,10 +320,23 @@ public class UrlShortenerController {
             h.setLocation(su.getUri());
             return new ResponseEntity<>(su, h, HttpStatus.CREATED);
         } else {
+            //System.out.println("Valid = " + urlValidator.isValid(url) + " Accesible = " + accesible);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
+    @RequestMapping(value = "/test_scheduler", method = RequestMethod.GET)
+    public ResponseEntity<ShortURL> test_scheduler() {
+        if (firstTime) {
+            firstTime = false;
+            //System.out.println("Chaning to BAD REQUEST");
+            return new ResponseEntity<>(HttpStatus.OK);
+        } else {
+            firstTime = true;
+            //System.out.println("Chaning to OK");
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
 
     private String extractIP(HttpServletRequest request) {
         return request.getRemoteAddr();
