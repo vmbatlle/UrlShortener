@@ -58,7 +58,7 @@ public class UrlChecker {
         return ret;
     }
 
-    @Scheduled(fixedDelay = 1000)
+    @Scheduled(fixedDelayString = "${uri.checker.period}")
     private void periodicCheck() {
         List<String> to_delete = new LinkedList<String>();
         for (ShortURL url : shortUrlService.all()) {

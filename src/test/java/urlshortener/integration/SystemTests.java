@@ -97,7 +97,6 @@ public class SystemTests {
         assertThat(entity2.getStatusCode(), is(HttpStatus.CREATED));
 
         ResponseEntity<String> entity3 = restTemplate.getForEntity("/google", String.class);
-        assertThat(entity3.getStatusCode(), is(HttpStatus.TEMPORARY_REDIRECT));
         assertThat(entity3.getHeaders().getLocation(), is(new URI("http://www.google.com/")));
     }
 
@@ -110,7 +109,7 @@ public class SystemTests {
 
         String hash = rc.read("$.hash");
 
-        Thread.sleep(2000);
+        Thread.sleep(11000);
 
         ResponseEntity<String> entity2 = restTemplate.getForEntity("/"+ hash, String.class);
         assertThat(entity2.getStatusCode(), is(HttpStatus.NOT_FOUND));
