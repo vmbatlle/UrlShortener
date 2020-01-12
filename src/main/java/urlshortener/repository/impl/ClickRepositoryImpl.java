@@ -12,7 +12,6 @@ import org.springframework.stereotype.Repository;
 import urlshortener.domain.Click;
 import urlshortener.repository.ClickRepository;
 
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;

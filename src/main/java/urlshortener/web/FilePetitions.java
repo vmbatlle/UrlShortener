@@ -1,16 +1,8 @@
 package urlshortener.web;
 
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.net.HttpURLConnection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,7 +23,7 @@ public class FilePetitions {
      * Add a new petition if not exists 
      * @param id Identificator of new petition
      */
-    public void addPetition(Long id) {
+    public synchronized void addPetition(Long id) {
         String url = "all_data_" + id;
         Download aux = downloadPetitions.get(id);
         if (aux == null) {// If not exists create a new petition
@@ -47,7 +39,7 @@ public class FilePetitions {
      * @param id petition searched
      * @return true if exixts a petition with identificator id
      */
-    public boolean existsPetition(Long id) {
+    public synchronized boolean existsPetition(Long id) {
         return downloadPetitions.containsKey(id);
     }
 
@@ -56,7 +48,7 @@ public class FilePetitions {
      * @param id petition searched
      * @return true if the file has been generated for petition id
      */
-    public boolean isReady(Long id) {
+    public synchronized boolean isReady(Long id) {
         return downloadPetitions.containsKey(id) && downloadPetitions.get(id).getReady();
     }
 
@@ -65,7 +57,7 @@ public class FilePetitions {
      * @param id petition searched
      * @return name of the petition id if exists, empty string otherwise
      */
-    public String getFile(Long id) {
+    public synchronized String getFile(Long id) {
         if (downloadPetitions.containsKey(id)) {
             return downloadPetitions.get(id).getId();
         } else {
@@ -77,7 +69,7 @@ public class FilePetitions {
      * 
      * @return all keys stored
      */
-    public Set<Long> getKeys(){
+    public synchronized Set<Long> getKeys(){
         return downloadPetitions.keySet();
     }
 
@@ -86,7 +78,7 @@ public class FilePetitions {
      * @param id petition searched
      * @return the download related to petition id if exists, null otherwise
      */
-    public Download getDownload(Long id){
+    public synchronized Download getDownload(Long id){
         if (downloadPetitions.containsKey(id)) {
             return downloadPetitions.get(id);
         } else {

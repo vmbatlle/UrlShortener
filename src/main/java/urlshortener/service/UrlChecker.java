@@ -8,11 +8,8 @@ import urlshortener.service.ShortURLService;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.util.LinkedList;
-import java.util.List;
 
 import org.jsoup.Connection.Response;
-import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 
 /**
