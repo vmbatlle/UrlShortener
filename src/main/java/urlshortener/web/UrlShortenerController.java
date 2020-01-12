@@ -63,7 +63,7 @@ import java.nio.file.Paths;
 public class UrlShortenerController {
 
     /** Default size of a page of clicks */
-    private static long defaultPageSize = 5;
+    private static long defaultPageSize = 50;
 
     /** Service storing the created short URLs */
     private final ShortURLService shortUrlService;
@@ -211,6 +211,7 @@ public class UrlShortenerController {
     /**
      * Gets the clicks stored in the database, page by page.
      * @param page  the number of page to retrieve (default = {@code defaultPageSize})
+     * @param page  the number of elements per page (default = {@code defaultPageSize})
      * @param start  the minimum date of a click (default = 1970-01-01T00:00)
      * @param end  the maximum date of a click (default = {@code LocalDateTime.now()})
      * @return  the {@code page}-th page of the list of clicks made on a
@@ -219,27 +220,34 @@ public class UrlShortenerController {
     @GetMapping("/all")
     @RequestMapping(value = "/all", method = RequestMethod.GET)
     public ModelAndView all(@RequestParam("page") Optional<Long> page,
+            @RequestParam("size") Optional<Long> size,
             @RequestParam("start") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Optional<LocalDateTime> start,
             @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Optional<LocalDateTime> end) {
 
         ModelAndView modelo = new ModelAndView("listClick");
+        modelo.addObject("size", size.orElse(defaultPageSize));
+        System.out.println("Tamaño: " + size.orElse((long) 5));
         // If there is no date get all page clicks
         if (!start.isPresent()) {
             modelo.addObject("window", false);
             // If the first page is asked use the cache, better performance
             if (page.orElse((long) 1) != 1) {
-                List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), defaultPageSize);
+                List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse(defaultPageSize));
                 modelo.addObject("clicks", lc);
             } else {
                 List<Click> lc = cache.asMap().values().stream().collect(Collectors.toList());
                 Collections.sort(lc, Collections.reverseOrder());
-                modelo.addObject("clicks", lc);
+                if(lc.size() > size.orElse(defaultPageSize)){
+                    modelo.addObject("clicks", lc.subList(0, Math.toIntExact(size.orElse(defaultPageSize))));
+                } else {
+                    modelo.addObject("clicks", lc);
+                }
             }
 
             Long count = clickService.count();
             // Total number of pages
             modelo.addObject("pages",
-                (int) Math.ceil((double)(count) / (double) defaultPageSize));
+                (int) Math.ceil((double)(count) / (double) size.orElse(defaultPageSize)));
             modelo.addObject("page", page.orElse((long) 1));
             modelo.addObject("start",
                 start.orElse(LocalDateTime.parse("1970-01-01T00:00")));
@@ -254,13 +262,13 @@ public class UrlShortenerController {
                     start.orElse(LocalDateTime.now()),
                     end.orElse(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)),
                     page.orElse((long) 1),
-                    defaultPageSize);
+                    size.orElse(defaultPageSize));
             modelo.addObject("clicks", lc);
             Long count = clickService.countByDate(
                 start.orElse(LocalDateTime.now()),
                 end.orElse(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)));
             modelo.addObject("pages",
-                (int) Math.ceil((double)(count) / (double) defaultPageSize));
+                (int) Math.ceil((double)(count) / (double) size.orElse(defaultPageSize)));
             modelo.addObject("page", page.orElse((long) 1));
             modelo.addObject("start",
                 start.orElse(LocalDateTime.parse("1970-01-01T00:00")));
