@@ -20,6 +20,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 import urlshortener.Application;
 import urlshortener.domain.Click;
+import urlshortener.web.FilePetitions;
+import urlshortener.domain.Download;
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
@@ -28,12 +30,14 @@ import java.net.URI;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.validation.constraints.Size;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -48,6 +52,9 @@ public class UrlShortenerTests4 {
     private long clicks;
 
     private MockMvc mockMvc;
+
+    @Mock
+    private FilePetitions file_petitions;
 
     @Mock
     private ClickService clickService;
@@ -204,33 +211,6 @@ public class UrlShortenerTests4 {
     }
 
     @Test
-    public void thatTestThePerformance()
-            throws Exception {
-        when(shortUrlService.findByKey("someKey")).thenReturn(someUrl());
-        
-        configureSave(null);
-
-        mockMvc.perform(get("/{id}", "someKey"))
-                .andExpect(status().isTemporaryRedirect())
-                .andExpect(redirectedUrl("http://example.com/"));
-        this.clicks = this.clicks + 1;
-
-        mockMvc.perform(get("/{id}", "someKey"))
-                .andExpect(status().isTemporaryRedirect())
-                .andExpect(redirectedUrl("http://example.com/"));
-        this.clicks = this.clicks + 1;
-        
-        mockMvc.perform(get("/{id}", "someKey"))
-                .andExpect(status().isTemporaryRedirect())
-                .andExpect(redirectedUrl("http://example.com/"));
-        this.clicks = this.clicks + 1;
-        
-        mockMvc.perform(MockMvcRequestBuilders.get("/all").param("page", "10").param("size", "5"))
-                .andDo(print())
-                .andExpect(model().attribute("clicks",  hasSize(0)));
-    }
-
-    @Test
     public void thatCollectAllAndHaveOPFields()
             throws Exception {
         when(shortUrlService.findByKey("someKey")).thenReturn(someUrl());
@@ -249,6 +229,52 @@ public class UrlShortenerTests4 {
                         hasProperty("browser",is("null")),
                         hasProperty("referrer",is("null"))
                         ))));
+    }
+
+    @Test
+    public void thatAskToDownload()
+            throws Exception {
+        when(shortUrlService.findByKey("someKey")).thenReturn(someUrl());
+        when(clickService.clicksReceived(1, 1)).thenReturn(someList());
+        configureSave(null);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/download-data")).andDo(print())
+                .andExpect(model().attribute("url", "all_data_0"))
+                .andExpect(model().attribute("pending", true));
+    }
+
+    @Test
+    public void thatAskToDownloadAndNothingToDownload()
+            throws Exception {
+        when(shortUrlService.findByKey("someKey")).thenReturn(someUrl());
+        
+        configureSave(null);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/download-data")).andDo(print())
+                .andExpect(model().attribute("pending", false));
+    }
+
+    @Test
+    public void thatDownloadFileButNotReady() throws Exception {
+        when(file_petitions.isReady(anyLong())).thenReturn(true);
+        when(clickService.clicksReceived(1, 1)).thenReturn(someList());
+
+        configureSave(null);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/download-data")).andDo(print())
+                .andExpect(model().attribute("url", "all_data_0"))
+                .andExpect(model().attribute("pending", true));
+
+        mockMvc.perform(get("/dwn/all_data_0")).andDo(print())
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void thatDownloadFileButNotExistsPetition() throws Exception {
+        configureSave(null);
+
+        mockMvc.perform(get("/dwn/all_data_1")).andDo(print())
+                .andExpect(status().isNotFound());
     }
 
     public static List<Click> someList(){

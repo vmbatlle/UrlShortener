@@ -226,7 +226,6 @@ public class UrlShortenerController {
 
         ModelAndView modelo = new ModelAndView("listClick");
         modelo.addObject("size", size.orElse(defaultPageSize));
-        System.out.println("Tamaño: " + size.orElse((long) 5));
         // If there is no date get all page clicks
         if (!start.isPresent()) {
             modelo.addObject("window", false);
