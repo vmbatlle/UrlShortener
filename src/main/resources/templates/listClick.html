@@ -23,6 +23,13 @@
         <button type="submit">Select Date</button>
      </form>
     </div>
+    <div>
+      <form th:action="@{/all}" th:object="${size}" method="get">
+        <label for="size">Enter page size:</label>
+        <input id="size" type="number" min="1" max="100" name="size" th:value="${size}">
+        <button type="submit">Select Size</button>
+     </form>
+    </div>
     <div layout:fragment="content">
         <h2>Clicks</h2>
         <table class="table table-bordered table-striped">
@@ -53,8 +60,8 @@
       </div>
       <div>
         <th:block th:each="i: ${#numbers.sequence(1, (pages))}">
-            <a th:if="${window}" th:href="@{/all(page=${i},start=${start},end=${end})}" th:text="${i}" class="btn">Button</a>
-            <a th:unless="${window}" th:href="@{/all(page=${i})}" th:text="${i}" class="btn">Button</a>
+            <a th:if="${window}" th:href="@{/all(page=${i},size=${size},start=${start},end=${end})}" th:text="${i}" class="btn">Button</a>
+            <a th:unless="${window}" th:href="@{/all(page=${i},size=${size})}" th:text="${i}" class="btn">Button</a>
         </th:block>
       </div>
 </body>
