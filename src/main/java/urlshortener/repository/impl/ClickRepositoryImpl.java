@@ -12,7 +12,6 @@ import org.springframework.stereotype.Repository;
 import urlshortener.domain.Click;
 import urlshortener.repository.ClickRepository;
 
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -54,7 +53,7 @@ public class ClickRepositoryImpl implements ClickRepository {
     @Override
     public List<Click> findByDate(LocalDateTime time, Long limit, Long offset) {
         try {
-            // Date date = java.sql.Date.valueOf(time.toLocalDate());
+            // Turn time into sql types
             Timestamp date = Timestamp.from(time.atZone(ZoneId.systemDefault()).toInstant());
             return jdbc.query("SELECT * FROM click WHERE created>=? ORDER BY id DESC LIMIT ? OFFSET ?",
                     new Object[]{date, limit, offset}, rowMapper);
@@ -65,11 +64,38 @@ public class ClickRepositoryImpl implements ClickRepository {
     }
 
     @Override
+    public List<Click> findByDate(LocalDateTime start, LocalDateTime end, Long limit, Long offset){
+        try {
+            // Turn start and end into sql types
+            Timestamp startDate = Timestamp.from(start.atZone(ZoneId.systemDefault()).toInstant());
+            Timestamp endDate = Timestamp.from(end.atZone(ZoneId.systemDefault()).toInstant());
+            return jdbc.query("SELECT * FROM click WHERE created>=? AND created<=? ORDER BY id DESC LIMIT ? OFFSET ?",
+                    new Object[]{startDate, endDate, limit, offset}, rowMapper);
+        } catch (Exception e) {
+            log.debug("When select for time " + start, e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
     public Long countByDate(LocalDateTime time){
         try {
-            Date date = java.sql.Date.valueOf(time.toLocalDate());
+            Timestamp date = Timestamp.from(time.atZone(ZoneId.systemDefault()).toInstant());
             return jdbc
                     .queryForObject("select count(*) from click WHERE created>=?", new Object[]{date}, Long.class);
+        } catch (Exception e) {
+            log.debug("When counting", e);
+        }
+        return -1L;
+    }
+
+    @Override
+    public Long countByDate(LocalDateTime start, LocalDateTime end){
+        try {
+            Timestamp startDate = Timestamp.from(start.atZone(ZoneId.systemDefault()).toInstant());
+            Timestamp endDate = Timestamp.from(end.atZone(ZoneId.systemDefault()).toInstant());
+            return jdbc
+                    .queryForObject("select count(*) from click WHERE created>=? AND created<=?", new Object[]{startDate, endDate}, Long.class);
         } catch (Exception e) {
             log.debug("When counting", e);
         }
@@ -163,6 +189,28 @@ public class ClickRepositoryImpl implements ClickRepository {
         } catch (Exception e) {
             log.debug("When select for limit " + limit + " and offset "
                     + offset, e);
+            return Collections.emptyList();
+        }
+    }
+    
+    @Override
+    public List<Click> listAll() {
+        try {
+            return jdbc.query("SELECT * FROM click ORDER BY id DESC",
+                    new Object[]{}, rowMapper);
+        } catch (Exception e) {
+            log.debug("When select all " , e);
+            return Collections.emptyList();
+        }
+    }
+    
+    @Override
+    public List<Click> listAll(Long id) {
+        try {
+            return jdbc.query("SELECT * FROM click WHERE id<=? ORDER BY id DESC",
+                    new Object[]{id}, rowMapper);
+        } catch (Exception e) {
+            log.debug("When select all " , e);
             return Collections.emptyList();
         }
     }
