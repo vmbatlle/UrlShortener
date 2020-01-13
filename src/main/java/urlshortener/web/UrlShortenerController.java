@@ -144,7 +144,7 @@ public class UrlShortenerController {
             Set<String> params_keys = params_map.keySet();
 
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-            //for (String key : params_keys) { System.out.println(key); params.addAll(key, Arrays.asList(params_map.get(key))); }
+            for (String key : params_keys) { System.out.println(key); params.addAll(key, Arrays.asList(params_map.get(key))); }
             String restOfTheUrl = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
             //String restOfTheUrl = (String) request.getRequestURI();
 
@@ -252,7 +252,6 @@ public class UrlShortenerController {
     }
 
     private ResponseEntity<?> createSuccessfulRedirectToResponse(ShortURL l, String restURL, MultiValueMap<String,String> params) {
-
         HttpHeaders h = new HttpHeaders();
         String querys = "";
         if (!params.isEmpty()) {
@@ -264,6 +263,7 @@ public class UrlShortenerController {
                 if (i != 0) querys += "&";
             }
         }
+
         h.setLocation(URI.create(l.getTarget() + restURL + querys));
         h.addAll(params);
         return new ResponseEntity<>(h, HttpStatus.valueOf(l.getMode()));
