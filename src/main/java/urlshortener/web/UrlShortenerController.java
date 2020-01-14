@@ -84,9 +84,9 @@ public class UrlShortenerController {
 
     /** All throttling units are requests per minute */
     /** Max. number of GET request per minute and IP address */
-    public static final int THROTTLING_GET_LIMIT_PER_ADDR = 10;
+    public static final int THROTTLING_GET_LIMIT_PER_ADDR = 100;
     /** Max. number of POST request per minute and IP address */
-    public static final int THROTTLING_POST_LIMIT_PER_ADDR = 10;
+    public static final int THROTTLING_POST_LIMIT_PER_ADDR = 100;
     public GlobalThrottling globalThrottling; /**< Limitter of global requests **/
     public URIThrotlling uriThrottling; /**< Limitter of request per URI **/
 

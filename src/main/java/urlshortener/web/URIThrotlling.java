@@ -17,7 +17,7 @@ import com.google.common.util.concurrent.RateLimiter;
 public class URIThrotlling {
 
     /** All throttling units are requests per minute */
-    public static final Integer DEFAULT_RATE = 100;
+    public static final Integer DEFAULT_RATE = 1000;
     private Integer uriRateLimiterRate;
     private Integer uriRateLimiterWarmup;
 

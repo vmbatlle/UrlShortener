@@ -13,8 +13,8 @@ import com.google.common.util.concurrent.RateLimiter;
 public class GlobalThrottling {
 
     /** All throttling units are requests per minute */
-    public static final Integer DEFAULT_RATE_GET = 10000;
-    public static final Integer DEFAULT_RATE_POST = 10000;
+    public static final Integer DEFAULT_RATE_GET = 100000;
+    public static final Integer DEFAULT_RATE_POST = 100000;
     private Boolean globalRateLimiterGetActive;
     private Boolean globalRateLimiterPostActive;
     private RateLimiter globalRateLimiterGet;
