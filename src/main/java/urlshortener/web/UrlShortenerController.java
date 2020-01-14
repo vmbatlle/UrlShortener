@@ -35,11 +35,12 @@ import java.net.URI;
 import java.time.LocalDateTime;
 
 import java.time.temporal.ChronoUnit;
-
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.jsoup.Connection.Response;
 import org.jsoup.HttpStatusException;
@@ -63,7 +64,7 @@ import java.nio.file.Paths;
 public class UrlShortenerController {
 
     /** Default size of a page of clicks */
-    private static long defaultPageSize = 5;
+    private static long defaultPageSize = 50;
 
     /** Service storing the created short URLs */
     private final ShortURLService shortUrlService;
@@ -197,7 +198,10 @@ public class UrlShortenerController {
             cache.put(cl.getId(), cl);
 
             /** Preapare final URI with original path and query params */
-            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            Map<String, String[]> params_map = request.getParameterMap();
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();           
+            params_map.forEach((key, value ) -> params.addAll(key, Arrays.asList(value)));
+
             String restOfTheUrl = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
             if (restOfTheUrl != null && restOfTheUrl.length() > 9) {
                 restOfTheUrl = restOfTheUrl.substring(restOfTheUrl.indexOf("/",2));
@@ -211,6 +215,7 @@ public class UrlShortenerController {
     /**
      * Gets the clicks stored in the database, page by page.
      * @param page  the number of page to retrieve (default = {@code defaultPageSize})
+     * @param page  the number of elements per page (default = {@code defaultPageSize})
      * @param start  the minimum date of a click (default = 1970-01-01T00:00)
      * @param end  the maximum date of a click (default = {@code LocalDateTime.now()})
      * @return  the {@code page}-th page of the list of clicks made on a
@@ -219,27 +224,33 @@ public class UrlShortenerController {
     @GetMapping("/all")
     @RequestMapping(value = "/all", method = RequestMethod.GET)
     public ModelAndView all(@RequestParam("page") Optional<Long> page,
+            @RequestParam("size") Optional<Long> size,
             @RequestParam("start") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Optional<LocalDateTime> start,
             @RequestParam("end") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") Optional<LocalDateTime> end) {
 
         ModelAndView modelo = new ModelAndView("listClick");
+        modelo.addObject("size", size.orElse(defaultPageSize));
         // If there is no date get all page clicks
         if (!start.isPresent()) {
             modelo.addObject("window", false);
             // If the first page is asked use the cache, better performance
             if (page.orElse((long) 1) != 1) {
-                List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), defaultPageSize);
+                List<Click> lc = clickService.clicksReceived(page.orElse((long) 1), size.orElse(defaultPageSize));
                 modelo.addObject("clicks", lc);
             } else {
                 List<Click> lc = cache.asMap().values().stream().collect(Collectors.toList());
                 Collections.sort(lc, Collections.reverseOrder());
-                modelo.addObject("clicks", lc);
+                if(lc.size() > size.orElse(defaultPageSize)){
+                    modelo.addObject("clicks", lc.subList(0, Math.toIntExact(size.orElse(defaultPageSize))));
+                } else {
+                    modelo.addObject("clicks", lc);
+                }
             }
 
             Long count = clickService.count();
             // Total number of pages
             modelo.addObject("pages",
-                (int) Math.ceil((double)(count) / (double) defaultPageSize));
+                (int) Math.ceil((double)(count) / (double) size.orElse(defaultPageSize)));
             modelo.addObject("page", page.orElse((long) 1));
             modelo.addObject("start",
                 start.orElse(LocalDateTime.parse("1970-01-01T00:00")));
@@ -254,13 +265,13 @@ public class UrlShortenerController {
                     start.orElse(LocalDateTime.now()),
                     end.orElse(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)),
                     page.orElse((long) 1),
-                    defaultPageSize);
+                    size.orElse(defaultPageSize));
             modelo.addObject("clicks", lc);
             Long count = clickService.countByDate(
                 start.orElse(LocalDateTime.now()),
                 end.orElse(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)));
             modelo.addObject("pages",
-                (int) Math.ceil((double)(count) / (double) defaultPageSize));
+                (int) Math.ceil((double)(count) / (double) size.orElse(defaultPageSize)));
             modelo.addObject("page", page.orElse((long) 1));
             modelo.addObject("start",
                 start.orElse(LocalDateTime.parse("1970-01-01T00:00")));
@@ -353,7 +364,13 @@ public class UrlShortenerController {
     
         if ((urlValidator.isValid(url) || url.contains("://localhost:")) && accesible ) {
             if (sponsor != null && sponsor.equals("")) sponsor = null;
+
+            /** Check if the sponsor already exists */
             if (sponsor != null && shortUrlService.findByKey(sponsor) != null) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            /** Check if the sponsor is valid */
+            if (sponsor != null && sponsor.contains("/")) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             url = final_url(url);
@@ -403,7 +420,6 @@ public class UrlShortenerController {
      * @return the redirection to send to the client.
      */
     private ResponseEntity<?> createSuccessfulRedirectToResponse(ShortURL l, String restURL, MultiValueMap<String,String> params) {
-
         HttpHeaders h = new HttpHeaders();
         String querys = "";
         if (!params.isEmpty()) {
@@ -415,6 +431,7 @@ public class UrlShortenerController {
                 if (i != 0) querys += "&";
             }
         }
+
         h.setLocation(URI.create(l.getTarget() + restURL + querys));
         h.addAll(params);
         return new ResponseEntity<>(h, HttpStatus.valueOf(l.getMode()));

@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +17,12 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
@@ -116,6 +121,20 @@ public class SystemTests {
 
         ResponseEntity<String> entity3 = restTemplate.getForEntity("/"+ hash, String.class);
         assertThat(entity3.getStatusCode(), is(HttpStatus.TEMPORARY_REDIRECT));
+    }
+
+    @Test
+    public void TestRedirectWithPathAndQUery() throws Exception {
+        ResponseEntity<String> entity = postLink("http://example.com");
+        assertThat(entity.getStatusCode(), is(HttpStatus.CREATED));
+        ReadContext rc = JsonPath.parse(entity.getBody());
+        String hash = rc.read("$.hash");
+
+        ResponseEntity<String> entity2 = restTemplate.getForEntity("http://localhost:" + this.port + "/" + hash + "/path?query={val}", String.class, "1");
+        assertThat(entity2.getStatusCode(), is(HttpStatus.TEMPORARY_REDIRECT));
+        assertThat(entity2.getHeaders().getLocation(), is(new URI("http://example.com/path?query=1")));
+        assertThat(entity2.getHeaders().get("query").get(0), is("1"));
+
     }
 
 

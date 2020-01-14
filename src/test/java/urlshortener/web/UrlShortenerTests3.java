@@ -92,6 +92,16 @@ public class UrlShortenerTests3 {
     }
 
     @Test
+    public void AddBadSponsoredURI() throws Exception {
+        configureSave("spon/sor");
+
+        mockMvc.perform(post("/link").param("url", "http://example.com/")
+                                     .param("sponsor", "spon/sor"))
+        .andDo(print())
+        .andExpect(status().isBadRequest());
+    }
+
+    @Test
     public void AddReachableURI() throws Exception {
         configureSave(null);
 
