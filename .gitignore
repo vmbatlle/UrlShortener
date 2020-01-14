@@ -137,3 +137,6 @@ $RECYCLE.BIN/
 java_home.txt
 
 files/*
+.metals/metals.h2.db
+.metals/metals.lock.db
+.metals/metals.log
