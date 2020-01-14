@@ -357,7 +357,13 @@ public class UrlShortenerController {
     
         if ((urlValidator.isValid(url) || url.contains("://localhost:")) && accesible ) {
             if (sponsor != null && sponsor.equals("")) sponsor = null;
+
+            /** Check if the sponsor already exists */
             if (sponsor != null && shortUrlService.findByKey(sponsor) != null) {
+                return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            }
+            /** Check if the sponsor is valid */
+            if (sponsor != null && sponsor.contains("/")) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             }
             url = final_url(url);
