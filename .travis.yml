@@ -1,2 +1,10 @@
 language: java
-jdk: openjdk8
+jdk:
+  - openjdk8
+deploy:
+  provider: heroku
+  api-key:
+    secure: $HEROKU_API_KEY
+  app: url-shortener-iw-19
+  on:
+    all_branches: true

@@ -8,6 +8,8 @@ import urlshortener.web.UrlShortenerController;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.linkTo;
 import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 
+import java.util.List;
+
 @Service
 public class ShortURLService {
 
@@ -21,11 +23,24 @@ public class ShortURLService {
         return shortURLRepository.findByKey(id);
     }
 
+    public void delete(String id) {
+        shortURLRepository.delete(id);
+    }
+
+    public void update(ShortURL nsu) {
+        shortURLRepository.update(nsu);
+    }
+
+    public List<ShortURL> all() {
+        long limit = shortURLRepository.count();
+        return shortURLRepository.list(limit, 0L);
+    }
+
     public ShortURL save(String url, String sponsor, String ip) {
         ShortURL su = ShortURLBuilder.newInstance()
                 .target(url)
-                .uri((String hash) -> linkTo(methodOn(UrlShortenerController.class).redirectTo(hash, null)).toUri())
                 .sponsor(sponsor)
+                .uri((String hash) -> linkTo(methodOn(UrlShortenerController.class).redirectTo(hash, null)).toUri())
                 .createdNow()
                 .randomOwner()
                 .temporaryRedirect()

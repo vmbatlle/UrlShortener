@@ -34,6 +34,10 @@ public class ShortURL {
     public ShortURL() {
     }
 
+    public void setUrl(URI new_uri) {
+        uri = new_uri;
+    }
+
     public String getHash() {
         return hash;
     }
@@ -64,6 +68,10 @@ public class ShortURL {
 
     public Boolean getSafe() {
         return safe;
+    }
+
+    public void setSafe(boolean state) {
+        safe = state;
     }
 
     public String getIP() {

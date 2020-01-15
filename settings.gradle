@@ -1,1 +1,4 @@
+include 'common'
+include 'demo'
+include 'team'
 rootProject.name = 'UrlShortener'

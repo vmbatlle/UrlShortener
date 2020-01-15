@@ -50,6 +50,7 @@ public class ShortURLBuilder {
 
     ShortURLBuilder sponsor(String sponsor) {
         this.sponsor = sponsor;
+        this.hash = sponsor != null ? sponsor : hash;
         return this;
     }
 
@@ -84,7 +85,7 @@ public class ShortURLBuilder {
     }
 
     ShortURLBuilder uri(Function<String, URI> extractor) {
-        this.uri = extractor.apply(hash);
+        this.uri = this.sponsor != null ? extractor.apply(sponsor) : extractor.apply(hash);
         return this;
     }
 }

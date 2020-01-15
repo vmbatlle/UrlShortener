@@ -14,7 +14,10 @@ import urlshortener.repository.ClickRepository;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 
@@ -26,7 +29,7 @@ public class ClickRepositoryImpl implements ClickRepository {
             .getLogger(ClickRepositoryImpl.class);
 
     private static final RowMapper<Click> rowMapper = (rs, rowNum) -> new Click(rs.getLong("id"), rs.getString("hash"),
-            rs.getDate("created"), rs.getString("referrer"),
+            rs.getTimestamp("created"), rs.getString("referrer"),
             rs.getString("browser"), rs.getString("platform"),
             rs.getString("ip"), rs.getString("country"));
 
@@ -46,6 +49,58 @@ public class ClickRepositoryImpl implements ClickRepository {
             return Collections.emptyList();
         }
     }
+    
+    @Override
+    public List<Click> findByDate(LocalDateTime time, Long limit, Long offset) {
+        try {
+            // Turn time into sql types
+            Timestamp date = Timestamp.from(time.atZone(ZoneId.systemDefault()).toInstant());
+            return jdbc.query("SELECT * FROM click WHERE created>=? ORDER BY id DESC LIMIT ? OFFSET ?",
+                    new Object[]{date, limit, offset}, rowMapper);
+        } catch (Exception e) {
+            log.debug("When select for time " + time, e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<Click> findByDate(LocalDateTime start, LocalDateTime end, Long limit, Long offset){
+        try {
+            // Turn start and end into sql types
+            Timestamp startDate = Timestamp.from(start.atZone(ZoneId.systemDefault()).toInstant());
+            Timestamp endDate = Timestamp.from(end.atZone(ZoneId.systemDefault()).toInstant());
+            return jdbc.query("SELECT * FROM click WHERE created>=? AND created<=? ORDER BY id DESC LIMIT ? OFFSET ?",
+                    new Object[]{startDate, endDate, limit, offset}, rowMapper);
+        } catch (Exception e) {
+            log.debug("When select for time " + start, e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public Long countByDate(LocalDateTime time){
+        try {
+            Timestamp date = Timestamp.from(time.atZone(ZoneId.systemDefault()).toInstant());
+            return jdbc
+                    .queryForObject("select count(*) from click WHERE created>=?", new Object[]{date}, Long.class);
+        } catch (Exception e) {
+            log.debug("When counting", e);
+        }
+        return -1L;
+    }
+
+    @Override
+    public Long countByDate(LocalDateTime start, LocalDateTime end){
+        try {
+            Timestamp startDate = Timestamp.from(start.atZone(ZoneId.systemDefault()).toInstant());
+            Timestamp endDate = Timestamp.from(end.atZone(ZoneId.systemDefault()).toInstant());
+            return jdbc
+                    .queryForObject("select count(*) from click WHERE created>=? AND created<=?", new Object[]{startDate, endDate}, Long.class);
+        } catch (Exception e) {
+            log.debug("When counting", e);
+        }
+        return -1L;
+    }
 
     @Override
     public Click save(final Click cl) {
@@ -58,7 +113,7 @@ public class ClickRepositoryImpl implements ClickRepository {
                                 Statement.RETURN_GENERATED_KEYS);
                 ps.setNull(1, Types.BIGINT);
                 ps.setString(2, cl.getHash());
-                ps.setDate(3, cl.getCreated());
+                ps.setTimestamp(3, cl.getCreated());
                 ps.setString(4, cl.getReferrer());
                 ps.setString(5, cl.getBrowser());
                 ps.setString(6, cl.getPlatform());
@@ -129,11 +184,33 @@ public class ClickRepositoryImpl implements ClickRepository {
     @Override
     public List<Click> list(Long limit, Long offset) {
         try {
-            return jdbc.query("SELECT * FROM click LIMIT ? OFFSET ?",
+            return jdbc.query("SELECT * FROM click ORDER BY id DESC LIMIT ? OFFSET ?",
                     new Object[]{limit, offset}, rowMapper);
         } catch (Exception e) {
             log.debug("When select for limit " + limit + " and offset "
                     + offset, e);
+            return Collections.emptyList();
+        }
+    }
+    
+    @Override
+    public List<Click> listAll() {
+        try {
+            return jdbc.query("SELECT * FROM click ORDER BY id DESC",
+                    new Object[]{}, rowMapper);
+        } catch (Exception e) {
+            log.debug("When select all " , e);
+            return Collections.emptyList();
+        }
+    }
+    
+    @Override
+    public List<Click> listAll(Long id) {
+        try {
+            return jdbc.query("SELECT * FROM click WHERE id<=? ORDER BY id DESC",
+                    new Object[]{id}, rowMapper);
+        } catch (Exception e) {
+            log.debug("When select all " , e);
             return Collections.emptyList();
         }
     }

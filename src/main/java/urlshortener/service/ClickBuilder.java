@@ -2,16 +2,18 @@ package urlshortener.service;
 
 import urlshortener.domain.Click;
 
-import java.sql.Date;
+import java.sql.Timestamp;
 
 public class ClickBuilder {
 
     private String hash;
-    private Date created;
+    private Timestamp created;
     private String referrer;
     private String browser;
     private String platform;
     private String ip;
+    // TODO: Use this attribute for its purpose
+    // private String device;
     private String country;
 
     static ClickBuilder newInstance() {
@@ -20,7 +22,7 @@ public class ClickBuilder {
 
     Click build() {
         return new Click(null, hash, created, referrer,
-                browser, platform, ip, country);
+                browser, platform, ip, country/*, device*/);
     }
 
     ClickBuilder hash(String hash) {
@@ -29,7 +31,7 @@ public class ClickBuilder {
     }
 
     ClickBuilder createdNow() {
-        this.created = new Date(System.currentTimeMillis());
+        this.created = new Timestamp(System.currentTimeMillis());
         return this;
     }
 
@@ -53,6 +55,28 @@ public class ClickBuilder {
         this.ip = ip;
         return this;
     }
+    
+    ClickBuilder referrer(String referrer) {
+        this.referrer = referrer;
+        return this;
+    }
+    
+    ClickBuilder browser(String browser) {
+        this.browser = browser;
+        return this;
+    }
+    
+    ClickBuilder platform(String platform) {
+        this.platform = platform;
+        return this;
+    }
+    
+    /*
+    ClickBuilder device(String device) {
+        this.device = device;
+        return this;
+    }
+    */
 
     ClickBuilder withoutCountry() {
         this.country = null;

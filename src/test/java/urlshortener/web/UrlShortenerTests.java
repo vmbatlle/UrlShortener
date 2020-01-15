@@ -1,13 +1,17 @@
 package urlshortener.web;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import urlshortener.domain.Click;
 import urlshortener.domain.ShortURL;
 import urlshortener.service.ClickService;
 import urlshortener.service.ShortURLService;
@@ -34,6 +38,15 @@ public class UrlShortenerTests {
     @Mock
     private ShortURLService shortUrlService;
 
+    @Mock
+    private URIThrotlling uriThrotlling;
+    
+    @Mock
+    private APIAccess api_acces;
+
+    @Mock
+    private GlobalThrottling globalThrottling;
+
     @InjectMocks
     private UrlShortenerController urlShortener;
 
@@ -41,12 +54,15 @@ public class UrlShortenerTests {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         this.mockMvc = MockMvcBuilders.standaloneSetup(urlShortener).build();
+        ReflectionTestUtils.setField(api_acces, "userStackKey", "e4edfb3090e960cd96d7a9df73acc622");
     }
 
     @Test
     public void thatRedirectToReturnsTemporaryRedirectIfKeyExists()
             throws Exception {
         when(shortUrlService.findByKey("someKey")).thenReturn(someUrl());
+
+        configureSave(null);
 
         mockMvc.perform(get("/{id}", "someKey")).andDo(print())
                 .andExpect(status().isTemporaryRedirect())
@@ -56,6 +72,7 @@ public class UrlShortenerTests {
     @Test
     public void thatRedirecToReturnsNotFoundIdIfKeyDoesNotExist()
             throws Exception {
+        configureSave(null);
         when(shortUrlService.findByKey("someKey")).thenReturn(null);
 
         mockMvc.perform(get("/{id}", "someKey")).andDo(print())
@@ -76,6 +93,7 @@ public class UrlShortenerTests {
                 .andExpect(jsonPath("$.sponsor", is(nullValue())));
     }
 
+    @Ignore("deprecated")
     @Test
     public void thatShortenerCreatesARedirectWithSponsor() throws Exception {
         configureSave("http://sponsor.com/");
@@ -95,16 +113,17 @@ public class UrlShortenerTests {
     public void thatShortenerFailsIfTheURLisWrong() throws Exception {
         configureSave(null);
 
-        mockMvc.perform(post("/link").param("url", "someKey")).andDo(print())
+        mockMvc.perform(post("/link").param("url", "http://authority")).andDo(print())
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     public void thatShortenerFailsIfTheRepositoryReturnsNull() throws Exception {
+        configureSave(null);
         when(shortUrlService.save(any(String.class), any(String.class), any(String.class)))
                 .thenReturn(null);
 
-        mockMvc.perform(post("/link").param("url", "someKey")).andDo(print())
+        mockMvc.perform(post("/link").param("url", "http://authority")).andDo(print())
                 .andExpect(status().isBadRequest());
     }
 
@@ -121,5 +140,14 @@ public class UrlShortenerTests {
                         false,
                         null,
                         null));
+        
+        when(clickService.saveClick(any(), any()))
+                .then((Answer<Click>) invocation -> new Click((long) 1, null, null, null, null,
+                                                null, null, null
+                        ));
+
+        when(globalThrottling.acquireGet()).then(invocation -> true);
+        when(globalThrottling.acquirePost()).then(invocation -> true);
+        when(uriThrotlling.acquire(any())).then(invocation -> true);
     }
 }
