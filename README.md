@@ -1,26 +1,43 @@
 # Web Engineering 2018-2019 / URL Shortener
 
-[![Build Status](https://travis-ci.org/UNIZAR-30246-WebEngineering/UrlShortener.svg?branch=master)](https://travis-ci.org/UNIZAR-30246-WebEngineering/UrlShortener)
+[![Build Status](https://travis-ci.org/vmbatlle/UrlShortener.svg?branch=master)](https://travis-ci.org/vmbatlle/UrlShortener)
 
-This is the shared repository for the project developed in this course. Go to the [wiki](../../wiki) to start your project.
+This is a fork of the shared repository for the project developed in this course.
 
 ## Projects
 
 * [Common](common) is the project that provides a minimum set of shared features.
 * [Demo](demo) is an example application and the sandbox for solving blocking issues.
 * [Team](team) is an empty application that can be used for development.
-# Web Engineering 2019-2020 / URL Shortener
 
-[![Build Status](https://travis-ci.org/UNIZAR-30246-WebEngineering/UrlShortener.svg?branch=master)](https://travis-ci.org/UNIZAR-30246-WebEngineering/UrlShortener)
+### Authors
 
-This is the start repository for the project developed in this course. 
+GALVE CEAMANOS, IGNACIO.
 
-The __project__ is a [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/) application that offers a minimum set of functionalities shared by all subprojects.
+GIMÉNEZ GARCÉS, JAVIER.
+
+MARTÍNEZ BATLLE, VÍCTOR.
+
+### Description
+
+The __project__ is a [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/) 
+application that offers a set of minimum functionalities:
 
 * __Short URL creation service__:  `POST /` creates a shortened URL from a URL in the request parameter `url`.
 * __Redirection service__: `GET /{id}` redirects the request to a URL associated with the parameter `id`.
 * __Database service__: Persistence and retrieval of `ShortURL` and `Click` objects.
 
+As well as some new set of functions:
+
+| # | Description |
+|---|-------------|
+|F1 | Inform about the clicks in a shortened URI. |
+|F2 | Allow you to customize the shortened URI. |
+|F3 | Limit the number of requests. |
+|F4 | Verify that the URI to be cut is attainable. |
+|F5 | Allow massive exports. |
+
+### First steps
 
 The application can be run as follows:
 
