@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -32,24 +34,28 @@ public class FileCreator {
 
     @Scheduled(fixedDelay = 2000)
     private void periodicCheck() {
-        for (Long id : fg.getKeys()){//Iterate over all petition keys
-            Download d = fg.getDownload(id);
-            if (!d.getReady()){ // If petition is no ready yet create the according json file
-                Gson gson = new Gson();
-                List<Click> clicks = clickService.allClicksUntil(id);
-                String filePath = "files/" + d.getId() + ".json";
-                File json = new File(filePath);
-                try {
-                    json.createNewFile();
-                    Writer wr =  new FileWriter(filePath);
-                    gson.toJson(clicks, wr);
-                    wr.flush();
-                    wr.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+        OperatingSystemMXBean operatingSystemMXBean = 
+          (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+        if(operatingSystemMXBean.getSystemLoadAverage() < 0.7){
+            for (Long id : fg.getKeys()){//Iterate over all petition keys
+                Download d = fg.getDownload(id);
+                if (!d.getReady()){ // If petition is no ready yet create the according json file
+                    Gson gson = new Gson();
+                    List<Click> clicks = clickService.allClicksUntil(id);
+                    String filePath = "files/" + d.getId() + ".json";
+                    File json = new File(filePath);
+                    try {
+                        json.createNewFile();
+                        Writer wr =  new FileWriter(filePath);
+                        gson.toJson(clicks, wr);
+                        wr.flush();
+                        wr.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    // Set the petition to ready
+                    d.setReady(true);
                 }
-                // Set the petition to ready
-                d.setReady(true);
             }
         }
     }
