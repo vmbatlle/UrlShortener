@@ -13,17 +13,25 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.RateLimiter;
 
+/**
+ * This class implements the request limitation (throtling) for each short URI.
+ */
 @Component
 public class URIThrotlling {
 
     /** All throttling units are requests per minute */
-    public static final Integer DEFAULT_RATE = 1000;
-    private Integer uriRateLimiterRate;
-    private Integer uriRateLimiterWarmup;
+    public static final Integer DEFAULT_RATE = 1000; /**< Default limit for URI access **/
+    private Integer uriRateLimiterRate; /**< Maximum number of accesses allowed per URI and minute **/
+    private Integer uriRateLimiterWarmup; /**< Warup value for URI rate limitter **/
 
-    private final CacheLoader<String, RateLimiter> loader;
-    private final LoadingCache<String, RateLimiter> cache;
+    private final CacheLoader<String, RateLimiter> loader; /**< Loader for @see cache **/
+    private final LoadingCache<String, RateLimiter> cache; /**< LRU URI rate limiters */
 
+    /**
+     * (constructor)
+     * @param rate  the maximum rate for URI access
+     * @param warmup  the warmup value for URI rate limitter
+     */
     @Autowired
     public URIThrotlling(@Value("${throttling.uri.rate}") final Integer rate,
                          @Value("${throttling.uri.warmup}") final Integer warmup) {
@@ -35,6 +43,12 @@ public class URIThrotlling {
         }
         uriRateLimiterWarmup = warmup;
 
+        /**
+         * Rate limiter are automatically created and loaded each time a MISS
+         * happens while looking up a key into the cache memory.
+         * 
+         * Type of the {@code RateLimiter} is fixed at construction.
+         */
         if (warmup != null && warmup > 0) {
             loader = new CacheLoader<String, RateLimiter>() {
                 @Override
@@ -58,6 +72,10 @@ public class URIThrotlling {
                     .build(loader);
     }
 
+    /**
+     * Set a new rate for URI access. (permits = 0 means disable throttling)
+     * @param permitsPerMinute  the number accesses to allow per minute.
+     */
     public void setThrottling(final Integer permitsPerMinute) {
         uriRateLimiterRate = permitsPerMinute;
         if (permitsPerMinute < 0) {
@@ -65,10 +83,19 @@ public class URIThrotlling {
         }
     }
 
+    /**
+     * Get current rate for URI access.
+     * @return the number of URI accesss allowed per minute.
+     */
     public Integer getRate() {
         return uriRateLimiterRate;
     }
 
+    /**
+     * Check if the current URI access is allowed by rate limitter.
+     * @param hash  the unique identifier of the URI
+     * @return true iff access is allowed
+     */
     public Boolean acquire(final String hash) {
         if (uriRateLimiterRate <= 0) return true;
         RateLimiter rateLimiter;
@@ -78,7 +105,6 @@ public class URIThrotlling {
             e.printStackTrace();
             return false;
         }
-        System.err.println(hash);
         return rateLimiter.tryAcquire();
     }
 }
